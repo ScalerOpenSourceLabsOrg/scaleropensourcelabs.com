@@ -8,8 +8,8 @@ you through it.
 ## Setup
 
 ```bash
-git clone https://github.com/<org>/<repo>.git
-cd <repo>/web
+git clone https://github.com/ScalerOpenSourceLabsOrg/scaleropensourcelabs.com.git
+cd scaleropensourcelabs.com/web
 npm install
 npm run dev          # http://localhost:3000
                      # port 3000 is often taken; use `npm run dev -- -p 3001`
