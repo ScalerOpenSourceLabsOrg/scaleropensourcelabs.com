@@ -205,34 +205,38 @@ await pg.waitForTimeout(700);
 // deleted. The page held an anonymous application form for a spell; membership is an
 // @sst.scaler.com address, which is the one thing that form could not check, so the door
 // and the test are the same act now.
+const joinState = await pg.evaluate(() => {
+  const text = document.querySelector("main")?.innerText ?? "";
+  return {
+    configured: /continue with google|sign in with your college account/i.test(text),
+    unconfigured: /sign-in is not set up here/i.test(text),
+    hasFormFields:
+      document.querySelectorAll("main input, main select, main textarea").length > 0,
+    statesDomain: /sst\.scaler\.com/i.test(text),
+  };
+});
+
+// CI intentionally runs without Firebase configuration. In that environment /join must
+// show the honest "not configured" state instead of a fake sign-in control. In a configured
+// deployment it must show the real college-account sign-in gate. Both states must remain
+// form-free.
 ok(
-  "join offers sign-in, not a form",
-  (await pg.evaluate(() =>
-    /continue with google/i.test(document.querySelector("main")?.innerText ?? ""),
-  )),
+  "join shows a valid gate state",
+  joinState.configured || joinState.unconfigured,
 );
-// THE ASSERTION THAT WOULD CATCH A REGRESSION HERE. A form reappearing on this page is
-// the specific thing this change removed, so its absence is checked rather than assumed —
-// zero inputs of any kind in the main column.
 ok(
   "and no application fields survive on the page",
-  (await pg.evaluate(
-    () => document.querySelectorAll("main input, main select, main textarea").length,
-  )) === 0,
+  !joinState.hasFormFields,
 );
 ok(
   "join keeps ?path in the URL",
   new URL(pg.url()).searchParams.get("path") === "program-track",
 );
-// THE DOMAIN RULE IS ON THE PAGE, not just in the rules. It is the whole membership test
-// and the one sentence a reader cannot afford to skim past, so a copy pass that removed it
-// would leave people signing in with a personal Gmail and being refused with no warning.
-ok(
-  "and states the one address that can register",
-  (await pg.evaluate(() =>
-    /sst\.scaler\.com/i.test(document.querySelector("main")?.innerText ?? ""),
-  )),
-);
+// The domain rule is important in both states: a configured gate explains the membership
+// requirement, while the unconfigured state explains what will be required once auth is
+// available.
+ok("and states the one address that can register", joinState.statesDomain);
+
 // The form must NOT be reachable without signing in. This is a UI assertion, not a
 // security one — the boundary is firestore.rules — but a form rendering to a signed-out
 // visitor would mean the gate had broken open.
