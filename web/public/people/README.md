@@ -16,9 +16,8 @@ list the person is in before cropping.
 | `ACHIEVERS`, `CORE_TEAM`, `ALUMNI` — the Hall of Fame cards | 4:5 tall | Portrait | 832 x 1040 |
 | `TEAM_OFFICERS`, `TEAM_LEADS`, `TEAM_SHADOWS`, `TEAM_CONTENT.members` — the org chart | Circle | **Square** | 448 x 448 |
 
-The chart's circles render at 112px (officers), 96px (leads) and 72px (shadows and
-desk members), so
-448px square covers the largest at 2x with room spare. A tall crop in a circular
+The chart's circles render at 144px (officers), 128px (leads) and 104px (shadows and
+desk members), so 448px square covers the largest at 2x with room spare. A tall crop in a circular
 frame keeps only the middle band of the image, which usually means a chin and a
 forehead — crop square, and **leave headroom**, because the corners get clipped by
 the radius.

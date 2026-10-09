@@ -14,7 +14,7 @@ import MemberDashboard from "@/components/MemberDashboard";
 
 export const metadata: Metadata = {
   title: "Your dashboard",
-  description: "Your details, what you have merged, and what the club has pinned up.",
+  description: "Your details, your merges, and the club board.",
   robots: { index: false, follow: false },
 };
 

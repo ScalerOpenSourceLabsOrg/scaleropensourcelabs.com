@@ -17,6 +17,7 @@
 // announcing that is a card apologising for a feature.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Panel from "@/components/dashboard/Panel";
 import { useAuth } from "@/lib/auth";
 import { readSessions, sessionWhen, upcoming, type SessionDoc } from "@/lib/sessions";
@@ -26,6 +27,9 @@ const SHOWN = 3;
 export default function NextSessions() {
   const { isClubMember } = useAuth();
   const [rows, setRows] = useState<SessionDoc[] | null>(null);
+  /** How many are upcoming in total, which is what decides whether the cap is hiding
+   *  anything. Kept separately from `rows` because `rows` is the capped list. */
+  const [total, setTotal] = useState(0);
 
   // WAIT FOR A DEFINITE ANSWER BEFORE ASKING. `isClubMember` is undefined until the
   // profile read comes back, and the query built from it decides which audiences this
@@ -38,7 +42,11 @@ export default function NextSessions() {
     (async () => {
       try {
         const all = await readSessions(isClubMember);
-        if (alive) setRows(upcoming(all).slice(0, SHOWN));
+        const ahead = upcoming(all);
+        if (alive) {
+          setTotal(ahead.length);
+          setRows(ahead.slice(0, SHOWN));
+        }
       } catch (e) {
         // Silent, and deliberately: a schedule that fails to load should cost the member
         // a panel, not an error message about a collection they have never heard of. The
@@ -54,8 +62,26 @@ export default function NextSessions() {
 
   if (rows === null || rows.length === 0) return null;
 
+  const more = total > rows.length;
+
   return (
-    <Panel icon="calendar" title="What's on">
+    <Panel
+      icon="calendar"
+      title="What's on"
+      /* THE CAP NOW HAS A WAY PAST IT. This panel shows three and said nothing about the
+         fourth, so a member with a busy fortnight could not find out there was one. The
+         link is only worth drawing when there is more than this panel is showing. */
+      action={
+        more ? (
+          <Link
+            href="/dashboard/events"
+            className="font-mono text-label uppercase tracking-wider text-accent underline-offset-4 hover:underline"
+          >
+            All {total}
+          </Link>
+        ) : undefined
+      }
+    >
       <ul className="space-y-2.5">
         {rows.map((s) => {
           const when = sessionWhen(s.starts_at);

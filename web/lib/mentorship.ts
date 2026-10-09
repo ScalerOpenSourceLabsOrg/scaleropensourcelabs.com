@@ -1,7 +1,7 @@
 // Mentorship: the mentors an organiser publishes, and the preferences a member records
 // against them. Two collections, one feature, one module.
 //
-// NOT TO BE CONFUSED WITH components/Mentors.tsx AND `MENTORS` IN content/club.ts. Those
+// NOT TO BE CONFUSED WITH components/Mentors.tsx AND `MENTORS` IN content/mentors.ts. Those
 // are a PUBLIC MARKETING section — hard-coded, consent-gated, rendered to anybody reading
 // the site, and currently empty. This is the private, signed-in machinery the club runs
 // its GSoC cohort with. The two will look similar in a file listing and have nothing to do
@@ -20,6 +20,9 @@
 // ONE READ PER COLLECTION PER DASHBOARD LOAD, unpaginated, for the same reason as
 // readAllProfiles: a few hundred documents against a 50,000-a-day free quota.
 
+import { newestSelectionFor } from "@/content/lookup";
+import { PROGRAMME_SHORT } from "@/content/programmes";
+import { PROGRAM_TRACK_MENTORS } from "@/content/join";
 import { ENROLLMENTS, MENTORS, getDb } from "@/lib/firebase";
 
 /** A mentor, as an organiser writes them. Every field here is published to every signed-in
@@ -74,6 +77,88 @@ export type Enrollment = {
 };
 
 // ---------------------------------------------------------------------- mentors
+
+/**
+ * The programme-track bench from /join, in the shape this collection stores.
+ *
+ * WHY THIS EXISTS RATHER THAN SOMEBODY RETYPING SIX PEOPLE. The public page and
+ * this collection describe the same six humans, and the header of this file is
+ * emphatic that they are different systems for good reasons — one is marketing
+ * copy about people who consented to be named, the other is private machinery an
+ * organiser runs a cohort with. That stands. What does not follow is that the
+ * six names, their organisations and their one-line descriptions should be typed
+ * a second time into a form: the same facts entered twice drift within a term,
+ * and the drift shows up as a student picking a mentor off a description that the
+ * public page has since corrected.
+ *
+ * So this converts, and AdminMentors offers it as an import an organiser presses
+ * once. It is NOT a sync: nothing here writes, nothing overwrites a row an
+ * organiser has since edited, and a mentor's real record lives in Firestore from
+ * the moment it is created. The import is a starting point, not a source of truth.
+ *
+ * NOBODY IS LEFT OUT FOR WANT OF A DESCRIPTION, and this is the rule that decides
+ * the shape of the function. `description` is required non-empty by the rules
+ * because it is what a student chooses on, and an earlier version of this simply
+ * skipped a mentor whose line had not been written — which quietly meant the
+ * missing line became a missing MENTOR, unpickable by the whole cohort, for as
+ * long as nobody noticed. A person absent from the picker is a worse failure than
+ * a person described thinly.
+ *
+ * So the fallback below states the credential and then says, in the description
+ * itself, that the description is missing. That is the honest version: it invents
+ * nothing about the person, it gives the student something true to weigh, and it
+ * tells them what to do about the gap. Nothing here is ever written from the
+ * organisation's reputation — "works on high-performance C++ at STE||AR" is a
+ * sentence about STE||AR that this file has no evidence is a sentence about him.
+ */
+export function programTrackMentorInputs(): MentorInput[] {
+  return PROGRAM_TRACK_MENTORS.map((m) => {
+    const credential = newestSelectionFor(m.name);
+    return {
+      name: m.name,
+      // The rules cap this at 600 characters. The bench's lines run to about
+      // 250, so the clamp is a guard against a future edit rather than something
+      // that fires today — but a write refused by the rules surfaces as
+      // "Firestore refused that write", which is a bad way to find out that
+      // somebody wrote a long paragraph in join.ts.
+      description: (m.blurb ?? standInDescription(m.name)).slice(0, 600),
+      /* The cohort they mentor FOR, which is not the same field as the programme
+         they were selected INTO and only looks like it here because every one of
+         the six is a GSoC story. An LFX mentor joining this bench would still
+         carry 'gsoc' as long as the club runs one cohort. */
+      programme: "gsoc",
+      org: credential?.org ?? "",
+      active: true,
+    };
+  });
+}
+
+/**
+ * What a mentor's card says while nobody has written their line.
+ *
+ * Addressed to the student reading the picker, not to the organiser — they are
+ * the one who has to decide something with it, and "TBA" tells them nothing they
+ * could act on. An organiser edits it away in the dashboard, or writes the real
+ * line into PROGRAM_TRACK_MENTORS and pastes it over; either way the row is a
+ * normal Firestore document from the moment it is created and this string never
+ * comes back to overwrite anything.
+ */
+function standInDescription(name: string): string {
+  const c = newestSelectionFor(name);
+  /* PROGRAMME_SHORT rather than the raw enum: these are proper nouns and the keys
+     are SHOUTED constants, so "GSOC 2026" is a spelling no programme uses of
+     itself. Same table the public cards print from. */
+  const credential = c
+    ? `${PROGRAMME_SHORT[c.programme]} ${c.year}${c.org ? ` at ${c.org}` : ""}. `
+    : "";
+  return `${credential}Their own description of what they are useful for has not been written down yet — ask an organiser before you put them first.`;
+}
+
+/** Who the import had to fall back on `standInDescription` for, so the caller can
+ *  say whose line still needs writing. */
+export function programTrackMentorsWithoutBlurb(): string[] {
+  return PROGRAM_TRACK_MENTORS.filter((m) => !m.blurb).map((m) => m.name);
+}
 
 /** Every mentor, including hidden ones. Any signed-in member may read this; the picker
  *  filters to `active` itself so the dashboard can still name a hidden mentor somebody

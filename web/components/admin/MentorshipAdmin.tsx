@@ -80,7 +80,7 @@ function Body() {
     } catch (e) {
       console.error("[osc] could not load mentorship", e);
       setError(
-        "Firestore refused the query. Either your address is not in the admins collection, or the rules are not deployed.",
+        "Firestore refused the query — you're not in admins, or the rules aren't deployed.",
       );
     } finally {
       setReloading(false);
@@ -143,8 +143,8 @@ function Body() {
           </button>
         }
       >
-        The mentors members can choose from, and who has chosen whom. Publishing the first
-        mentor is what opens enrolment on every member&apos;s dashboard.
+        Mentors, and who picked whom. Publishing the first mentor opens enrolment for
+        every member.
       </SectionHead>
 
       {error && (

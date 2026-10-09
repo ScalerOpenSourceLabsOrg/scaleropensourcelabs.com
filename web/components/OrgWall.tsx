@@ -33,8 +33,7 @@ export default function OrgWall() {
       <div className="mt-9 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
         <p className="text-display-md font-semibold">No organisations listed yet.</p>
         <p className="measure mx-auto mt-4 text-body text-haze">
-          This fills in as members land work in projects outside the university. Each
-          entry names the member and links somewhere you can check it.
+          Fills in as members land work outside college — each one linked.
         </p>
       </div>
     );

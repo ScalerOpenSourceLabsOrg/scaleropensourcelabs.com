@@ -8,7 +8,7 @@ import Composer from "@/components/Composer";
 // NOT a privilege gate; see components/admin/Gate.tsx.
 export const metadata: Metadata = {
   title: "Notices",
-  description: "The board every member reads on their dashboard. Post something and it lands there first.",
+  description: "Post to the board on every member's dashboard.",
   robots: { index: false, follow: false },
 };
 
@@ -16,7 +16,7 @@ export default function Page() {
   return (
     <AdminGate>
       <SectionHead eyebrow="Organisers" title="Notices.">
-        The board every member reads on their dashboard. Post something and it lands there first.
+        Post it here and it tops every member&apos;s dashboard.
       </SectionHead>
       <Composer />
     </AdminGate>

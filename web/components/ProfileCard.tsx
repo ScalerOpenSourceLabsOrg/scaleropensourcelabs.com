@@ -182,8 +182,7 @@ export default function ProfileCard({
             That&apos;s you signed up.
           </h2>
           <p className="measure mt-4 text-body text-haze">
-            Somebody will message you before the next session. There is nothing else to do
-            and nothing to prepare — turn up with a laptop and you are in.
+            We&apos;ll message you before the next session. Just bring a laptop.
           </p>
         </>
       ) : (
@@ -192,8 +191,7 @@ export default function ProfileCard({
             What we have on you.
           </h2>
           <p className="measure mt-4 text-body text-haze">
-            All of it, and nothing else. Change any of it whenever you like — a new hostel,
-            a GitHub handle you finally made, a programme you have decided to chase.
+            That&apos;s everything. Change it whenever you like.
           </p>
         </>
       )}

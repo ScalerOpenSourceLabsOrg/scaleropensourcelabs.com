@@ -30,7 +30,14 @@
 import { useState } from "react";
 import { field, labelOf } from "@/components/admin/ui";
 import { PROGRAMS } from "@/content/join";
-import { deleteMentor, saveMentor, type Mentor, type MentorInput } from "@/lib/mentorship";
+import {
+  deleteMentor,
+  programTrackMentorInputs,
+  programTrackMentorsWithoutBlurb,
+  saveMentor,
+  type Mentor,
+  type MentorInput,
+} from "@/lib/mentorship";
 
 /** A blank mentor, for the add form. `gsoc` because that is the cohort the club runs;
  *  the select is there so a second programme needs no code change. */
@@ -111,7 +118,7 @@ function Editor({
           maxLength={600}
           rows={4}
           className={`${field} resize-y`}
-          placeholder="What they work on, and what they are useful for. 'Kubernetes and Go; good on proposal structure; not the person to ask about frontend.'"
+          placeholder="What they work on and help with. 'Kubernetes and Go; good on proposals; not frontend.'"
           value={v.description}
           onChange={(e) => set("description", e.target.value)}
         />
@@ -220,6 +227,67 @@ export default function AdminMentors({
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  /** What the last import did. Cleared on the next one. */
+  const [imported, setImported] = useState("");
+
+  /* THE IMPORT, and the two things it deliberately is not.
+     It is not a sync: a mentor already in this list is left exactly as they are,
+     matched on name, however far their description here has drifted from the
+     public page's. An organiser who edited a description in the dashboard did
+     that on purpose, and a button that silently reverted it would be the last
+     time anybody pressed it.
+     It is not a bulk create either — it writes one document per missing mentor
+     through the same saveMentor every other row goes through, so the rules
+     validate each one and a refusal stops the run with the reason on screen
+     rather than leaving half a list written by a path nothing else uses. */
+  async function importBench() {
+    if (mentors === null) return;
+    setSaving(true);
+    setError("");
+    setImported("");
+    const here = new Set(mentors.map((m) => m.name.trim().toLowerCase()));
+    const missing = programTrackMentorInputs().filter(
+      (m) => !here.has(m.name.trim().toLowerCase()),
+    );
+    try {
+      for (const input of missing) await saveMentor(input);
+      /* Named only for the rows this run actually created. Everybody on the bench
+         is imported, description or not — one without a written line arrives with
+         a stand-in that says so on their card, which is a thing to fix rather
+         than a reason to leave somebody out of the picker. But an organiser who
+         has already rewritten that stand-in here does not need telling about it
+         every time they press the button, and a mentor who was typed in by hand
+         is not missing anything either. */
+      const created = new Set(missing.map((m) => m.name));
+      const thin = programTrackMentorsWithoutBlurb().filter((n) =>
+        created.has(n),
+      );
+      setImported(
+        [
+          missing.length === 0
+            ? "Everybody on the bench was already here."
+            : `Added ${missing.length}: ${missing.map((m) => m.name).join(", ")}.`,
+          thin.length > 0 &&
+            `${thin.join(", ")} got a placeholder description — edit the row below, or fill it in PROGRAM_TRACK_MENTORS in content/join.ts.`,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+      if (missing.length > 0) onChanged();
+    } catch (e) {
+      console.error("[osc] could not import the bench", e);
+      // The parent re-reads the list even on failure: some rows may already be
+      // written, and leaving a stale list on screen is what would make a second
+      // press create them a second time - the opposite of what the sentence below
+      // promises.
+      onChanged();
+      setError(
+        "Firestore refused a write — you're not in admins, or the rules aren't deployed. Anything added before it is saved; retrying won't duplicate them.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function save(input: MentorInput, id?: string) {
     setSaving(true);
@@ -231,7 +299,7 @@ export default function AdminMentors({
     } catch (e) {
       console.error("[osc] could not save mentor", e);
       setError(
-        "Firestore refused that write. Either your address is not in the admins collection, or the rules are not deployed.",
+        "Firestore refused that write — you're not in admins, or the rules aren't deployed.",
       );
     } finally {
       setSaving(false);
@@ -262,15 +330,36 @@ export default function AdminMentors({
           </p>
         </div>
         {editing !== "new" && (
-          <button
-            type="button"
-            onClick={() => setEditing("new")}
-            className="btn btn-secondary btn-compact"
-          >
-            Add a mentor
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Named after where the list comes from rather than "import mentors",
+                because the organiser pressing it needs to know WHICH six arrive and
+                where to go to change them. It sits beside the manual add rather
+                than replacing it — the bench is one source of mentors, not the
+                only one. */}
+            <button
+              type="button"
+              onClick={() => void importBench()}
+              disabled={saving || mentors === null}
+              className="tap font-mono text-label uppercase text-haze underline transition-colors hover:text-ink disabled:opacity-60"
+            >
+              Import the bench from /join
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing("new")}
+              className="btn btn-secondary btn-compact"
+            >
+              Add a mentor
+            </button>
+          </div>
         )}
       </div>
+
+      {imported && (
+        <p className="mt-4 text-sm leading-relaxed text-haze" role="status">
+          {imported}
+        </p>
+      )}
 
       {error && (
         <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
@@ -295,8 +384,7 @@ export default function AdminMentors({
           // Until there is one mentor, every member's dashboard shows "enrolment opens
           // when the organisers add them" — which is a sentence somebody has to act on.
           <p className="rounded-tile border border-dashed border-seam p-5 text-sm leading-relaxed text-dust">
-            No mentors yet. Until you add one, the mentorship card on every member&apos;s
-            dashboard says enrolment has not opened.
+            No mentors yet — every member sees enrolment as closed until you add one.
           </p>
         )}
 

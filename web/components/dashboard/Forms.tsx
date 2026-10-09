@@ -128,7 +128,7 @@ function OneForm({
       // The most likely cause by far is the form having closed between the page loading
       // and the button being pressed, which the rules refuse — so that is named first.
       setError(
-        "That did not save. The form may have closed since you opened this page — reload and check.",
+        "Didn't save — the form may have closed. Reload and check.",
       );
     } finally {
       setBusy(false);
@@ -291,15 +291,9 @@ function OneForm({
                 </div>
               ))}
           {form.show_tally && !form.tally && (
-            <p className="mt-3 text-sm text-dust">
-              Counts appear within a minute of people answering.
-            </p>
+            <p className="mt-3 text-sm text-dust">Counts appear shortly.</p>
           )}
         </div>
-      )}
-
-      {!form.open && !answered && (
-        <p className="mt-3 text-sm text-haze">This one closed before you got to it.</p>
       )}
     </li>
   );
@@ -345,7 +339,7 @@ export default function Forms({
       // apart, because a form is something an organiser is waiting on an answer to — a
       // member told there is nothing to fill in is a member who misses the sign-up that
       // was open. If the two panels should behave alike, this is the line to change.
-      setError("The forms didn't load. Give it a refresh?");
+      setError("Could not load the forms. Reload to try again.");
       setForms([]);
     }
   }, [uid, isClubMember]);
@@ -386,15 +380,7 @@ export default function Forms({
       )}
 
       {forms !== null && visible.length === 0 && !error && (
-        <>
-          <h3 className="font-display text-display-md font-bold tracking-tight">
-            Nothing to fill in at the moment
-          </h3>
-          <p className="measure mt-3 text-body text-haze">
-            Sign-ups and the odd &ldquo;which Saturday suits everyone&rdquo; turn up here when the
-            organisers need to know something.
-          </p>
-        </>
+        <p className="text-body text-haze">Nothing to fill in at the moment.</p>
       )}
 
       {visible.length > 0 && (
@@ -413,9 +399,7 @@ export default function Forms({
             ))}
           </ul>
           {/* Said once, at the foot, rather than on every form. */}
-          <p className="mt-5 text-sm text-dust">
-            The organisers can see who answered — these are not anonymous.
-          </p>
+          <p className="mt-5 text-sm text-dust">These are not anonymous.</p>
         </>
       )}
     </Panel>

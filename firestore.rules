@@ -7,7 +7,7 @@ rules_version = '2';
 // static export with no server — so there is no back end doing checks. Everything that
 // protects members' data is in this file.
 //
-// The site now has sign-in, a dashboard and an organisers' page. Ten collections:
+// The site now has sign-in, a dashboard and an organisers' page. Twelve collections:
 //
 //   users/{uid}        one profile per member. Readable and writable ONLY by that
 //                      member, plus readable by admins. Contains their name, college
@@ -37,6 +37,24 @@ rules_version = '2';
 //                      bypasses this file. A count a client can write is a count a
 //                      client can invent, and "merged pull requests" is the one number
 //                      here somebody has a reason to inflate.
+//   leaderboard/{id}   the club's ranking, as ONE document the same function derives
+//                      from the collection above. Read by admitted members, written by
+//                      no client. It exists so that showing a ranking does not require
+//                      letting every member list everybody's counts — the disclosure is
+//                      the document's contents and nothing wider.
+//
+// And the two Build Days brought:
+//
+//   attendance/{sessionId}
+//                      the roll taken at one Build Day: a count and who took it, no
+//                      names. Any signed-in student may read it. It exists so that "the
+//                      roll was never taken" is distinguishable from "nobody came" —
+//                      without it, every session an organiser forgot to mark reports 0%.
+//   attendance/{sessionId}/present/{uid}
+//                      one row per student who was there, and what they were working on.
+//                      Read by its subject and by admins, WRITTEN ONLY BY ADMINS — the
+//                      student it is about cannot write it, for the contributions/ reason:
+//                      the club picks its mentor cohort partly on attendance.
 //
 // TWO THINGS CHANGED IN THE BLOCKS ABOVE WHEN THOSE ARRIVED, and both are easy to miss:
 //
@@ -180,6 +198,28 @@ service cloud.firestore {
      *  anybody. */
     function isOwner() {
       return isAdmin() && adminRow().get('role', 'admin') == 'owner';
+    }
+
+    /** A FLOOR MENTOR: somebody an organiser has asked to help in the room at Build Days.
+     *  They work the live help queue and nothing else — they cannot read profiles, the
+     *  roll, the cohort or anything an admin can.
+     *
+     *  A SEPARATE ROLE RATHER THAN AN admins/ ROW, because an admin row is the whole
+     *  organisers' area: every profile, every form answer, the roster. Somebody helping
+     *  forty students with `git rebase` for an afternoon needs none of that.
+     *
+     *  Keyed by lowercased email like admins/, so a mentor can be added before they first
+     *  sign in. A missing `active` means active, the same default admins/ uses. */
+    function isFloorMentor() {
+      return isStudent()
+        && exists(/databases/$(database)/documents/floor_mentors/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/floor_mentors/$(request.auth.token.email.lower()))
+             .data.get('active', true) == true;
+    }
+
+    /** Anybody who may work the floor: a floor mentor, or an organiser. */
+    function isFloorHelper() {
+      return isAdmin() || isFloorMentor();
     }
 
     /** May this reader see the document being read? ONE FUNCTION, applied identically
@@ -365,7 +405,7 @@ service cloud.firestore {
         // `path` is optional: it is carried in from a ?path= link rather than asked for,
         // and most members arrive without one.
         && (!('path' in d)
-            || d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track'])
+            || d.path in ['build-day', 'hackathon', 'first-contribution', 'fast-track', 'program-track'])
 
         // The server's clock, never the client's, so "member since" and "last edited"
         // cannot be backdated.
@@ -549,7 +589,7 @@ service cloud.firestore {
     function isWellFormedSession(d) {
       return
         d.keys().hasOnly([
-          'title', 'speaker', 'location', 'notes', 'starts_at',
+          'title', 'speaker', 'location', 'notes', 'starts_at', 'kind',
           'audience', 'created_by', 'created_at', 'updated_at'
         ])
         && isWellFormedAudience(d)
@@ -557,6 +597,20 @@ service cloud.firestore {
 
         && d.title is string && d.title.size() > 0 && d.title.size() <= 140
         && d.starts_at is timestamp
+
+        // `kind` MARKS THE SESSIONS THE CLUB TAKES A ROLL AT, and it is the key that
+        // attendance/{sessionId} hangs off — see that block below.
+        //
+        // A FIELD ON A SESSION RATHER THAN A COLLECTION OF ITS OWN. A Build Day IS a
+        // session: it has a time, a room, an audience and a place in the schedule, and
+        // every one of those is already built here. A parallel collection would have had
+        // to grow its own editor, its own audience gating and its own upcoming/past split,
+        // and would have drifted from this one the first time either moved.
+        //
+        // ABSENT MEANS AN ORDINARY SESSION, which is what every session scheduled before
+        // this field existed is. Contrast `audience`, where absent had to be read as a
+        // value — nothing here queries on `kind`, so an absent one costs nothing.
+        && (!('kind' in d) || d.kind == 'build-day')
 
         && (!('speaker' in d) || (d.speaker is string && d.speaker.size() > 0 && d.speaker.size() <= 120))
         && (!('location' in d) || (d.location is string && d.location.size() > 0 && d.location.size() <= 120))
@@ -635,6 +689,245 @@ service cloud.firestore {
         && d.answers.keys().hasOnly(formDoc(formId).field_ids)
 
         && d.updated_at == request.time;
+    }
+
+    /** THE HEADER ON ONE SESSION'S ROLL, and it exists to make one distinction the
+     *  subcollection cannot: "nobody was marked" versus "the roll was never taken".
+     *
+     *  Without it those two are the same absence, and every Build Day an organiser forgot
+     *  to mark reports 0% attendance — which is not a cosmetic problem, because the club
+     *  selects its mentor-supported cohort partly on attendance across three sessions. A
+     *  number that silently means "we did not look" is worse than a missing one.
+     *
+     *  `present_count` IS A CONVENIENCE AND THE SUBCOLLECTION IS THE TRUTH. Members cannot
+     *  list the roll — see the match block — so this is the only way a count reaches
+     *  anybody but an organiser. Two organisers marking at once can leave it one behind;
+     *  it is recomputed from the rows on every load of the grid, so it corrects itself. */
+    function isWellFormedRoll(d, sessionId) {
+      return
+        d.keys().hasOnly(['session_id', 'taken_by', 'taken_at', 'present_count', 'updated_at'])
+        && d.keys().hasAll(['session_id', 'taken_by', 'present_count', 'updated_at'])
+
+        // The id in the body must agree with the id in the path, so a roll cannot claim to
+        // be a different session's — the same pin as uid on a profile.
+        && d.session_id == sessionId
+
+        && d.taken_by is string && d.taken_by.size() > 0
+        && d.present_count is int && d.present_count >= 0
+
+        && d.updated_at == request.time
+        && (!('taken_at' in d) || d.taken_at == request.time || d.taken_at == resource.data.taken_at);
+    }
+
+    /** ONE STUDENT, PRESENT AT ONE BUILD DAY, plus what they were working on.
+     *
+     *  PRESENCE IS EXISTENCE. There is no `present: true` field, because a document that
+     *  can say `false` is a document somebody has to remember to write for all sixty
+     *  students — and the first absent row nobody wrote would be indistinguishable from a
+     *  student who was never in the list. Unmarking deletes the row.
+     *
+     *  THIS IS THE ONE SHAPE FUNCTION IN THIS FILE THAT DOES NOT PIN THE SUBJECT TO THE
+     *  CALLER, and that is the whole difference from isWellFormedResponse above. A response
+     *  is a member describing themselves, so `d.uid == request.auth.uid` holds. A roll is
+     *  an ORGANISER describing somebody else, so the only identity check expressible here
+     *  is that the body agrees with the path. Who may write it is decided by the match
+     *  block — `isAdmin()`, and nobody else, including the student the row is about.
+     *
+     *  WHY THE STUDENT CANNOT WRITE THEIR OWN. It is the same argument as contributions/:
+     *  attendance is a number the club selects a cohort on, so it is a number somebody has
+     *  a reason to inflate. A self-check-in is a reasonable feature and is NOT this — it
+     *  would need a code an organiser holds and a Cloud Function to check it, because a
+     *  code these rules can read is a code the student can read out of the session too.
+     *
+     *  `track` IS HERE RATHER THAN ON THE PROFILE, deliberately. Putting it on users/{uid}
+     *  would mean widening isWellFormedProfile, onlyMembershipChanged() and
+     *  membershipUnchanged() — the three functions that stop a member granting themselves
+     *  membership — for a field that is genuinely per-session anyway: the club allocates
+     *  tracks during the first Build Day and students move between them. */
+    function isWellFormedAttendee(d, uid) {
+      return
+        d.keys().hasOnly([
+          'uid', 'email', 'name', 'track',
+          'repo', 'issue_url', 'pr_url', 'blocker', 'next_step',
+          'marked_by', 'updated_at'
+        ])
+        && d.keys().hasAll(['uid', 'email', 'track', 'marked_by', 'updated_at'])
+
+        && d.uid == uid
+        && d.email is string && d.email.size() > 0 && d.email.size() <= 160
+        && (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 120))
+
+        // A closed set, mirrored in web/lib/buildDays.ts. The three tracks the club
+        // announced; an unrecognised one would put a student in a bucket no screen draws.
+        && d.track in ['beginner', 'intermediate', 'advanced']
+
+        // "owner/name", the form the dashboard already stores contributions in. Bounded
+        // and shaped rather than free text, so the grid's repo column cannot become a
+        // place to type a sentence.
+        && (!('repo' in d)
+            || (d.repo is string
+                && d.repo.size() > 0
+                && d.repo.size() <= 140
+                && d.repo.matches('^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$')))
+
+        // https:// ONLY, the same guard the notice board's `link` carries and for the same
+        // reason: these are rendered as anchors on the organisers' screen, and a
+        // `javascript:` href typed into a text box is the cheapest XSS there is.
+        && (!('issue_url' in d)
+            || (d.issue_url is string
+                && d.issue_url.size() > 0
+                && d.issue_url.size() <= 500
+                && d.issue_url.matches('^https://[^ ]+$')))
+        && (!('pr_url' in d)
+            || (d.pr_url is string
+                && d.pr_url.size() > 0
+                && d.pr_url.size() <= 500
+                && d.pr_url.matches('^https://[^ ]+$')))
+
+        && (!('blocker' in d) || (d.blocker is string && d.blocker.size() > 0 && d.blocker.size() <= 500))
+        && (!('next_step' in d) || (d.next_step is string && d.next_step.size() > 0 && d.next_step.size() <= 500))
+
+        && d.marked_by is string && d.marked_by.size() > 0
+        && d.updated_at == request.time;
+    }
+
+    /** One floor mentor, as an organiser writes them. */
+    function isWellFormedFloorMentor(d, email) {
+      return
+        d.keys().hasOnly(['email', 'name', 'active', 'added_by', 'added_at', 'updated_at'])
+        && d.keys().hasAll(['email', 'name', 'active', 'added_by', 'added_at', 'updated_at'])
+        && d.email == email
+        && email.matches('^[^@A-Z]+@sst[.]scaler[.]com$')
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.active is bool
+        && d.added_by is string && d.added_by.size() > 0
+        && d.updated_at == request.time;
+    }
+
+    /** Is the live floor open for this session? A Build Day, from an hour before it starts
+     *  until twelve hours after. Mirrored by FLOOR_OPENS_BEFORE / FLOOR_CLOSES_AFTER in
+     *  web/lib/floor.ts.
+     *
+     *  A WINDOW RATHER THAN AN "ON" SWITCH, so nobody has to remember to open the floor
+     *  with forty students already waiting — and a stale floor cannot take writes a week
+     *  later from somebody who left the tab open. */
+    function floorOpen(sessionId) {
+      let s = get(/databases/$(database)/documents/sessions/$(sessionId)).data;
+      return s.get('kind', '') == 'build-day'
+        && request.time > s.starts_at - duration.value(1, 'h')
+        && request.time < s.starts_at + duration.value(12, 'h');
+    }
+
+    /** An optional https:// link. Rendered as an anchor on the mentors' screen, so the
+     *  `javascript:` guard the roll's link fields carry applies here too. */
+    function isOptionalHttps(d, k) {
+      return !(k in d)
+        || (d[k] is string && d[k].size() > 0 && d[k].size() <= 500 && d[k].matches('^https://[^ ]+$'));
+    }
+
+    /** ONE STUDENT'S LIVE STATUS AT ONE BUILD DAY: where they are, and whether they want
+     *  a hand.
+     *
+     *  SELF-REPORTED, AND THAT IS WHY IT IS NOT ON THE ROLL. attendance/ is organiser-
+     *  written because the cohort is selected on it. This is a student telling the room
+     *  "I'm stuck on setup" — worthless if they cannot write it themselves, and nothing
+     *  reads it as evidence of anything once the session is over.
+     *
+     *  `help` IS A THREE-STATE, and each state pins what else may be present:
+     *    none     — no help_at, no note, no claim
+     *    open     — help_at, optional note, no claim
+     *    claimed  — help_at, optional note, and who is on their way
+     *  so no screen ever has to decide what a claim on a closed request means. */
+    function isWellFormedFloorRow(d, uid) {
+      return
+        d.keys().hasOnly([
+          'uid', 'name', 'seat', 'phase', 'phase_at',
+          'help', 'help_note', 'help_at', 'claimed_by', 'claimed_name', 'claimed_at',
+          'last_helped_at', 'repo', 'issue_url', 'pr_url', 'updated_at'
+        ])
+        && d.keys().hasAll(['uid', 'name', 'phase', 'phase_at', 'help', 'updated_at'])
+        && d.uid == uid
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && (!('seat' in d) || (d.seat is string && d.seat.size() > 0 && d.seat.size() <= 60))
+
+        // A closed set, mirrored in web/lib/floor.ts — `npm run rules` diffs the two.
+        && d.phase in [
+          'joined', 'setup', 'finding-repo', 'found-repo', 'running-locally',
+          'finding-issue', 'found-issue', 'created-issue', 'coding', 'committed',
+          'pr-opened', 'existing-pr', 'review', 'merged'
+        ]
+        && d.phase_at is timestamp
+
+        && d.help in ['none', 'open', 'claimed']
+        && ('help_at' in d) == (d.help != 'none')
+        && (!('help_at' in d) || d.help_at is timestamp)
+        && (!('help_note' in d)
+            || (d.help != 'none' && d.help_note is string
+                && d.help_note.size() > 0 && d.help_note.size() <= 280))
+        && ('claimed_by' in d) == (d.help == 'claimed')
+        && ('claimed_name' in d) == (d.help == 'claimed')
+        && ('claimed_at' in d) == (d.help == 'claimed')
+        && (!('claimed_by' in d)
+            || (d.claimed_by is string && d.claimed_name is string
+                && d.claimed_name.size() > 0 && d.claimed_name.size() <= 120
+                && d.claimed_at is timestamp))
+        && (!('last_helped_at' in d) || d.last_helped_at is timestamp)
+
+        && (!('repo' in d)
+            || (d.repo is string && d.repo.size() > 0 && d.repo.size() <= 140
+                && d.repo.matches('^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$')))
+        && isOptionalHttps(d, 'issue_url')
+        && isOptionalHttps(d, 'pr_url')
+
+        && d.updated_at == request.time;
+    }
+
+    /** What a student may change about their own row.
+     *
+     *  EVERYTHING ABOUT THEMSELVES, NOTHING ABOUT THE MENTOR. They can raise a hand, edit
+     *  the note, or put the hand down — but they cannot claim themselves, rewrite who is
+     *  coming, or reset when they were last helped (which is what the quiet list reads). */
+    function isFloorStudentEdit(n, o) {
+      return n.get('last_helped_at', null) == o.get('last_helped_at', null)
+        && (n.phase == o.phase ? n.phase_at == o.phase_at : n.phase_at == request.time)
+        && (
+          // Same help state: only the note may move.
+          (n.help == o.help
+            && n.get('help_at', null) == o.get('help_at', null)
+            && n.get('claimed_by', null) == o.get('claimed_by', null)
+            && n.get('claimed_name', null) == o.get('claimed_name', null)
+            && n.get('claimed_at', null) == o.get('claimed_at', null))
+          // Raising a hand.
+          || (o.help == 'none' && n.help == 'open' && n.help_at == request.time)
+          // Putting it down — "sorted it myself". The shape function strips the rest.
+          || n.help == 'none'
+        );
+    }
+
+    /** What a mentor may change about somebody else's row: the help fields, and only
+     *  through the three moves the queue has. */
+    function isFloorHelperEdit(n, o) {
+      return n.diff(o).affectedKeys().hasOnly([
+          'help', 'help_note', 'help_at', 'claimed_by', 'claimed_name', 'claimed_at',
+          'last_helped_at', 'updated_at'
+        ])
+        && (
+          // CLAIM: "I'm coming". Also how a mentor checks in on somebody who never asked,
+          // which is the point of the quiet list — help_at starts now in that case.
+          (n.help == 'claimed'
+            && n.claimed_by == request.auth.token.email
+            && n.claimed_at == request.time
+            && n.help_at == o.get('help_at', request.time)
+            && n.get('help_note', null) == o.get('help_note', null)
+            && n.get('last_helped_at', null) == o.get('last_helped_at', null))
+          // RELEASE: back in the queue, keeping their place.
+          || (o.help == 'claimed' && n.help == 'open'
+            && n.help_at == o.help_at
+            && n.get('help_note', null) == o.get('help_note', null)
+            && n.get('last_helped_at', null) == o.get('last_helped_at', null))
+          // DONE: hand down, and the quiet clock restarts.
+          || (o.help != 'none' && n.help == 'none' && n.last_helped_at == request.time)
+        );
     }
 
     /** AN APPLICATION FROM A STRANGER, and the only unauthenticated write in this file.
@@ -922,6 +1215,123 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ------------------------------------------------------------- attendance
+
+    /** THE ROLL TAKEN AT ONE BUILD DAY. Keyed by the session's own id, so a roll cannot
+     *  exist for a session that does not, and a session cannot have two.
+     *
+     *  READABLE BY ANY SIGNED-IN STUDENT, and that is safe because of what is NOT in this
+     *  document: it holds a count and the organiser who took it, and no names. Who was
+     *  there lives one level down, behind an owner-or-admin rule. A student learning that
+     *  eighteen people came to a Build Day learns nothing the room did not already tell
+     *  them. */
+    match /attendance/{sessionId} {
+      allow get: if isStudent();
+      allow list: if isAdmin();
+
+      allow create: if isAdmin()
+        && request.resource.data.taken_by == request.auth.token.email
+        && isWellFormedRoll(request.resource.data, sessionId);
+
+      // taken_by gets the pin-then-freeze treatment a notice's byline does: the club has
+      // several organisers, and the second one to mark somebody present must not end up
+      // recorded as the person who took the roll.
+      allow update: if isAdmin()
+        && request.resource.data.taken_by == resource.data.taken_by
+        && isWellFormedRoll(request.resource.data, sessionId)
+        && (!('taken_at' in resource.data)
+            || request.resource.data.taken_at == resource.data.taken_at);
+
+      // NO DELETE, AND THIS ONE IS NOT SYMMETRY WITH THE SUBCOLLECTION. Deleting this
+      // document does NOT delete the rows under it — Firestore subcollections outlive
+      // their parent — so a delete here would leave every student's row in place while the
+      // club's record said the roll was never taken. Unmarking everybody is the honest way
+      // to undo a roll, and it leaves present_count at 0, which is a true statement.
+      allow delete: if false;
+    }
+
+    /** ONE STUDENT AT ONE BUILD DAY. Keyed by uid, so a second row for the same student is
+     *  not refused by a check somebody has to remember — it cannot be expressed.
+     *
+     *  THE LIST RULE IS ADMIN-ONLY, for the reason the form responses carry: this is an
+     *  attributed record the club selects a cohort from, and it is only safe to keep
+     *  because no student can enumerate it. A member reads exactly their own row.
+     *
+     *  WRITTEN ONLY BY AN ORGANISER, INCLUDING THE ROW ABOUT YOURSELF. See
+     *  isWellFormedAttendee() for the argument; briefly, attendance is one of the numbers
+     *  the mentor cohort is chosen on, and a number its subject can write is a number its
+     *  subject can inflate. */
+    match /attendance/{sessionId}/present/{uid} {
+      allow get: if isStudent() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      // marked_by is pinned to the caller on EVERY write rather than frozen after the
+      // first, which is the opposite of the byline treatment above and is deliberate. On a
+      // session this field answers "who scheduled this"; here it answers "who last said
+      // this student was working on that", which is a question about the most recent edit.
+      allow create, update: if isAdmin()
+        && request.resource.data.marked_by == request.auth.token.email
+        && isWellFormedAttendee(request.resource.data, uid);
+
+      // UNMARKING IS A DELETE, because presence is existence — see the shape function. An
+      // organiser who ticks the wrong row has to be able to untick it, and there is no
+      // `present: false` for them to write instead.
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------ the floor
+
+    /** Who may work the floor. Organisers appoint; a mentor reads only their own row. */
+    match /floor_mentors/{email} {
+      allow get: if isStudent() && (request.auth.token.email.lower() == email || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isAdmin()
+        && request.resource.data.added_by == request.auth.token.email
+        && request.resource.data.added_at == request.time
+        && isWellFormedFloorMentor(request.resource.data, email);
+      allow update: if isAdmin()
+        && request.resource.data.added_by == resource.data.added_by
+        && request.resource.data.added_at == resource.data.added_at
+        && isWellFormedFloorMentor(request.resource.data, email);
+      // Not a handover record like admins/ — a mentor for one term is just removed.
+      allow delete: if isAdmin();
+    }
+
+    /** One student's live status. Theirs to write while the floor is open; any floor
+     *  helper may move the help fields.
+     *
+     *  THE WHOLE FLOOR IS VISIBLE TO EVERY STUDENT, names, phases and raised hands
+     *  included — the club's call, so the room can see who is where and students can help
+     *  each other. Nothing here is more personal than what the room already sees: a name,
+     *  a phase, a seat, and a one-line note the student chose to write. The roll
+     *  (attendance/) stays admin-only; this is not that. */
+    match /floor/{sessionId}/students/{uid} {
+      allow get, list: if isStudent();
+
+      allow create: if isStudent()
+        && request.auth.uid == uid
+        && floorOpen(sessionId)
+        && isWellFormedFloorRow(request.resource.data, uid)
+        && request.resource.data.phase_at == request.time
+        && request.resource.data.help in ['none', 'open']
+        && request.resource.data.get('help_at', request.time) == request.time
+        && !('last_helped_at' in request.resource.data);
+
+      allow update: if isStudent()
+        && isWellFormedFloorRow(request.resource.data, uid)
+        && (
+          (request.auth.uid == uid
+            && floorOpen(sessionId)
+            && isFloorStudentEdit(request.resource.data, resource.data))
+          || (request.auth.uid != uid
+            && isFloorHelper()
+            && isFloorHelperEdit(request.resource.data, resource.data))
+        );
+
+      allow delete: if false;
+    }
+
     // ------------------------------------------------------------------ forms
 
     match /forms/{formId} {
@@ -1028,6 +1438,43 @@ service cloud.firestore {
       // not a restriction on a feature, it is the feature. "Merged pull requests" is the
       // one number on the dashboard somebody has a reason to inflate, and the first time a
       // member edited it by hand the panel would stop meaning anything.
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------ leaderboard
+
+    match /leaderboard/{id} {
+      // THE ONE PLACE ONE MEMBER'S COUNTS ARE VISIBLE TO ANOTHER, and it is deliberately
+      // a DERIVED document rather than a widening of the block above.
+      //
+      // The obvious way to build a leaderboard is `allow list: if isClubMember()` on
+      // contributions/ — and that is not a leaderboard rule, it is "every member may read
+      // every member's GitHub record", with the ranking being the only part that happens
+      // to render. This document holds a name, a handle and three counts per member and
+      // nothing else, so what a reader can obtain is exactly what the page shows them.
+      // The private collection stays get-only to its owner, which is what it was for.
+      //
+      // isClubMember(), NOT isStudent(). It names people, and it names them to the club
+      // rather than to the domain — the same line the private notice board draws. The
+      // function that writes it applies the same filter to the rows, so the people on the
+      // board and the people who can see it are one list. Both halves have to move
+      // together: relaxing this to isStudent() without changing functions/index.js would
+      // publish members' names to every address on the domain.
+      //
+      // APPEARING IS VOLUNTARY BECAUSE A HANDLE IS. Only members who typed a GitHub
+      // username into their own profile are ranked, and clearing that field drops them
+      // from the next nightly build. There is no opt-out flag here because there is
+      // nothing to opt out of until a member publishes the handle themselves.
+      allow get: if isClubMember() || isAdmin();
+
+      // Nothing lists this. There is one document and its id is known, so a list rule
+      // would only ever serve a caller enumerating what else somebody put in here.
+      allow list: if false;
+
+      // WRITTEN BY NO CLIENT, for the reason the collection it is built from is: a rank
+      // somebody can edit is a rank somebody will edit. The Cloud Function uses the Admin
+      // SDK and bypasses this file entirely — see rebuildLeaderboard() in
+      // functions/index.js, which is also the only place the shape is defined.
       allow write: if false;
     }
 

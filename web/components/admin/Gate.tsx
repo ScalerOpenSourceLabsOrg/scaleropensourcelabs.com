@@ -46,8 +46,8 @@ export default function AdminGate({ children }: { children: ReactNode }) {
         </p>
         <p className="measure mt-4 text-body text-haze">
           {user
-            ? "You are signed in, but your address is not on the organisers list. If it should be, ask somebody who already has access to add you."
-            : "Sign in with your college account first. If you are an organiser, this page will fill in."}
+            ? "You're signed in, but not on the organisers list. Ask an organiser to add you."
+            : "Organiser? Sign in with your college account first."}
         </p>
         {/* NO DEV LOGIN HERE, DELIBERATELY. It was on this refusal first — it is the one a
             developer actually hits, signed in as the test member on /admin — and then it

@@ -79,6 +79,11 @@
         "source": "/programs",
         "destination": "/programmes",
         "type": 301
+      },
+      {
+        "source": "/how-to-join",
+        "destination": "/join",
+        "type": 302
       }
     ]
   }

@@ -163,10 +163,18 @@ const USERS = "users";
 const CONTRIBUTIONS = "contributions";
 const FORMS = "forms";
 const RESPONSES = "responses";
+// The published ranking. One document, rebuilt nightly — see rebuildLeaderboard().
+const LEADERBOARD = "leaderboard";
+const BOARD_ID = "current";
 
-/** Two search requests per member against a 30-per-minute authenticated limit means one
- *  member every 4.5 seconds is the ceiling. 5s leaves a little headroom. */
-const GAP_MS = 5000;
+/** THREE search requests per member — merged, open, and issues opened — against a
+ *  30-per-minute authenticated limit means one member every 6 seconds is the ceiling. 7s
+ *  leaves a little headroom.
+ *
+ *  It was 5s when there were two searches. Whoever adds a fourth moves this again:
+ *  functions/github.js is where the count lives, and the two have to agree or the sweep
+ *  rate-limits itself partway through the club and stops. */
+const GAP_MS = 7000;
 
 /** How many members one scheduled run will refresh.
  *
@@ -216,6 +224,93 @@ async function readOne(uid) {
     // useful, so it crosses as ISO and toDate() parses the string on the other side.
     synced_at: d.synced_at?.toDate?.().toISOString() ?? null,
   };
+}
+
+/** THE CLUB'S LEADERBOARD, AS ONE DOCUMENT.
+ *
+ *  WHY IT IS DERIVED HERE RATHER THAN QUERIED BY THE CLIENT. `contributions` is
+ *  get-only to its owner and list-only to an admin, and that rule is load-bearing: a
+ *  member who could list the collection could read every other member's counts
+ *  whether or not anything rendered them. A leaderboard needs the ranking, not the
+ *  collection, so the Admin SDK computes the ranking and publishes the one document
+ *  members are allowed to see. The private collection stays private.
+ *
+ *  WHAT IS IN IT IS THE WHOLE DISCLOSURE. Name, handle and three counts — nothing
+ *  from the profile that a member did not already publish about themselves. Email,
+ *  hostel, batch and path are on the same user document and none of them appear here;
+ *  whoever adds a field adds it to a page every member of the club can read.
+ *
+ *  ADMITTED MEMBERS ONLY, not every verified address. Signing in proves somebody
+ *  studies here, which was never membership in anything (see `membership` in
+ *  web/lib/profile.ts) — and this is the club's board, published to the club. The
+ *  read rule in firestore.rules says isClubMember() for the same reason, so the two
+ *  halves agree: the people on it are the people who can see it.
+ *
+ *  AND ONLY PEOPLE WHO GAVE A HANDLE, which is what makes appearing voluntary. There
+ *  is no opt-out switch because there is no row to opt out of until a member types a
+ *  GitHub username into their own profile; clearing that field removes them from the
+ *  next build. If the club ever wants to be on the board without publishing a handle,
+ *  that is a real opt-in field and a rules change, not a tweak here.
+ *
+ *  BUILT BY THE NIGHTLY SWEEP AND NOWHERE ELSE. The obvious addition is to rebuild it
+ *  at the end of refreshContributions() so a member who just merged something sees
+ *  themselves move — and that is two full collection reads per press of a button with
+ *  a ten-minute cooldown, on the one path a member can trigger at will. The board
+ *  carries `built_at` and the page says "as of ..." instead, which is both cheaper and
+ *  more honest than a number that is fresh for one row and a day old for the rest. */
+const BOARD_SIZE = 100;
+
+async function rebuildLeaderboard() {
+  const db = admin.firestore();
+  const [members, counts] = await Promise.all([
+    db.collection(USERS).get(),
+    db.collection(CONTRIBUTIONS).get(),
+  ]);
+  const profiles = new Map(members.docs.map((d) => [d.id, d.data()]));
+
+  const rows = counts.docs
+    .map((d) => ({ uid: d.id, ...d.data() }))
+    .filter((c) => {
+      const p = profiles.get(c.uid);
+      // A handle GitHub could not find is dropped rather than ranked at zero. "Nobody
+      // by that name" and "nothing merged yet" are different facts, and only one of
+      // them belongs on a board about what people have done.
+      return p && p.membership === "member" && !c.not_found && isValidHandle((c.github ?? "").trim());
+    })
+    .map((c) => ({
+      uid: c.uid,
+      // The handle is the fallback name, not "Anonymous": a member with a blank name
+      // is a profile mid-edit, and @handle still identifies them to their own club.
+      name: String(profiles.get(c.uid).name ?? "").trim() || c.github.trim(),
+      github: c.github.trim(),
+      merged: c.merged ?? 0,
+      repos: c.repos ?? 0,
+      // NULL, NOT ZERO, for a row synced before the function counted issues — the same
+      // distinction web/lib/contributions.ts makes for the same reason. Telling somebody
+      // who has filed a dozen bug reports that they have filed none is worse than saying
+      // we have not looked.
+      issues: typeof c.issues === "number" ? c.issues : null,
+    }))
+    .sort(
+      (a, b) =>
+        b.merged - a.merged ||
+        b.repos - a.repos ||
+        (b.issues ?? 0) - (a.issues ?? 0) ||
+        a.name.localeCompare(b.name),
+    );
+
+  await db
+    .collection(LEADERBOARD)
+    .doc(BOARD_ID)
+    .set({
+      rows: rows.slice(0, BOARD_SIZE),
+      // How many were ranked in total, so a member who is not in the top hundred can be
+      // told that plainly rather than being left to wonder whether the sync missed them.
+      counted: rows.length,
+      built_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+  logger.info(`Leaderboard rebuilt: ${rows.length} ranked, top ${Math.min(rows.length, BOARD_SIZE)} published.`);
 }
 
 exports.syncContributions = onSchedule(
@@ -288,6 +383,22 @@ exports.syncContributions = onSchedule(
     }
 
     logger.info(`Sync finished. ${done} updated, ${failed} failed.`);
+
+    // THE BOARD IS REBUILT EVEN WHEN THE SWEEP GOT NOWHERE, including after a rate limit
+    // broke out of the loop above. It is derived from what is stored, not from what this
+    // run fetched, so skipping it on a bad night would leave yesterday's document in
+    // place while `built_at` said yesterday — which is correct but useless. Rebuilding
+    // costs two collection reads and makes the timestamp mean "we looked", which is the
+    // thing the page promises its reader.
+    try {
+      await rebuildLeaderboard();
+    } catch (err) {
+      // A failed board does not fail the sync. The counts are the record; the ranking is
+      // a view of it, and a stale view is worth more than a run marked failed.
+      logger.error("Could not rebuild the leaderboard.", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   },
 );
 
@@ -432,3 +543,4 @@ exports.tallyResponses = onDocumentWritten(
     logger.info("Tally updated.", { formId, responses: responses.size });
   },
 );
+

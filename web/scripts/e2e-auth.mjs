@@ -336,7 +336,9 @@ console.log("-- a student signs up --");
   {
     const [bw, cw] = await pg.evaluate(() => [
       document.querySelector("#apply button.btn-primary").getBoundingClientRect().width,
-      document.querySelector("#apply .rounded-panel").clientWidth,
+      // getBoundingClientRect for both, not clientWidth: under the page's CSS zoom the
+      // two are in different units and the ratio comes out 0.8x too small.
+      document.querySelector("#apply .rounded-panel").getBoundingClientRect().width,
     ]);
     ok("the sign-in button spans the card", bw / cw > 0.75, `${Math.round(bw)}px in ${cw}px`);
   }

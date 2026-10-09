@@ -51,6 +51,9 @@ const APP_CHECK_KEY = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_KEY ?? "";
  *  firestore.rules rather than bypassing it. See scripts/rules-emulator.mjs. */
 const EMULATOR = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR ?? "";
 
+/** True when pointed at the local emulator — lets error messages name the likely cause. */
+export const usingEmulator = (): boolean => Boolean(EMULATOR);
+
 /** The three values without which nothing can work. `apiKey` and `projectId` are
  *  obvious; `appId` is included because App Check and Analytics both need it and a
  *  half-filled config that initialises and then fails per-request is worse than one
@@ -267,6 +270,33 @@ export const SESSIONS = "sessions";
 
 /** GitHub counts for one member, written ONLY by the Cloud Function. */
 export const CONTRIBUTIONS = "contributions";
+
+/** The club's ranking, derived from CONTRIBUTIONS by the same Cloud Function and held as
+ *  ONE document — see LEADERBOARD_DOC. It exists because the collection above is
+ *  get-only to its owner: showing a ranking must not mean letting every member list
+ *  everybody's record. */
+export const LEADERBOARD = "leaderboard";
+
+/** The only document in LEADERBOARD. A fixed id rather than a query, so reading the board
+ *  is one getDoc and the rules never need a list rule. */
+export const LEADERBOARD_DOC = "current";
+
+/** The roll taken at one Build Day, keyed by the session's own id. Holds a count and no
+ *  names — who was there is one level down, in PRESENT. */
+export const ATTENDANCE = "attendance";
+
+/** One row per student who was at a Build Day, under attendance/{sessionId}. Keyed by uid,
+ *  so a second row for the same student cannot be expressed. Admin-written, including the
+ *  row about yourself — see firestore.rules for why. */
+export const PRESENT = "present";
+
+/** The live floor at one Build Day, keyed by session id. FLOOR_STUDENTS under it holds
+ *  each student's self-reported phase and help request. See web/lib/floor.ts. */
+export const FLOOR = "floor";
+export const FLOOR_STUDENTS = "students";
+
+/** Who may work the floor at Build Days, keyed by lowercased email. Organiser-written. */
+export const FLOOR_MENTORS = "floor_mentors";
 
 /** The callable-functions handle, or null when Firebase is not configured.
  *

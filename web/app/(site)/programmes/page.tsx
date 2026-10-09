@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Doodle from "@/components/Doodle";
 import Duo from "@/components/Duo";
-import Icon from "@/components/Icon";
 import NextAction from "@/components/NextAction";
 import Note from "@/components/fx/Note";
 import { JOIN_HREF } from "@/content/site";
@@ -12,9 +11,8 @@ import {
   PAID,
   PROGRAMME_NAME,
   PROGRAMME_SHORT,
-  TRACKS,
   type ProgrammeInfo,
-} from "@/content/club";
+} from "@/content/programmes";
 import { achieversFor } from "@/content/people";
 
 // THE PROGRAMMES PAGE. The paid, competitive things a student can be selected
@@ -35,11 +33,15 @@ import { achieversFor } from "@/content/people";
 // tiers, repeating this page's own <h1> as its heading. It is gone; see the note
 // where it stood.
 //
+// The "Pick your path" track cards that closed this page are gone too. They were
+// a fourth list of ways in, and the reader could not tell it from the three on
+// /join, /events and the home page. /join is the one place that names them now.
+//
 // The route is /programmes, with /programs redirecting to it. See the note over
 // `redirects` in next.config.js.
 
 export const metadata: Metadata = {
-  title: "Programmes",
+  title: "OS Programmes",
   description:
     "GSoC, LFX Mentorship, C4GT and Summer of Bitcoin — what they are, where to start, and when the work that earns a place actually happens.",
 };
@@ -97,7 +99,7 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
                 : "border-seam text-haze"
             }`}
           >
-            {paid ? "Paid · selective" : "Open entry"}
+            {paid ? "Paid · selective" : "Unpaid · open entry"}
           </p>
 
           <div className="mt-5">
@@ -181,8 +183,8 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
                 // the field beside it is worse than no copy.
                 <span className="text-haze">
                   {paid
-                    ? "Nobody yet. Which means the first person from this college to get in has not been picked — and there is no queue."
-                    : "Nobody has logged one yet. Nothing is stopping you: there is no selection here, so it comes down to turning up when it opens."}
+                    ? "Nobody yet. The first spot is up for grabs."
+                    : "Nobody yet. No selection — just show up when it opens."}
                 </span>
               )}
             </dd>
@@ -209,7 +211,7 @@ export default function Programmes() {
   return (
     <main id="main">
       <header className="section page-top pb-4" data-reveal-group>
-        <p className="chip">Paid open source</p>
+        <p className="chip">OS Programmes</p>
         <Duo
           as="h1"
           className="mt-6 max-w-4xl text-display-lg"
@@ -221,12 +223,15 @@ export default function Programmes() {
             PROGRAMMES and nothing connected that array to this sentence. A hardcoded
             count in a standfirst above the list it counts is the most visible way for
             this site to be wrong about itself, and the split is only over the two
-            tiers because that distinction is the point of the page. */}
+            tiers because that distinction is the point of the page.
+
+            The #paid standfirst had the same bug and kept it longer: it opened
+            "Five programmes that pay a stipend" over a list of four, because it was
+            written when Outreachy was still in the tier. It counts now too. */}
         <p className="measure mt-4 text-body-lg text-haze">
-          {PAID.length} paid programmes you have to be selected into, and{" "}
-          {OPEN_ENTRY.length} you can start today — all run by organisations that have
-          nothing to do with this club or this college. We cannot get anybody in. What
-          we can do is make sure you are the kind of contributor they pick.
+          {OPEN_ENTRY.length} unpaid ones you can start today, {PAID.length} paid ones you get
+          picked for. We can&apos;t get you in — but we can make you the contributor
+          they pick.
         </p>
       </header>
 
@@ -239,11 +244,11 @@ export default function Programmes() {
       <section
         id="open-entry"
         className="section pt-14 sm:pt-20"
-        aria-label="Open-entry programmes"
+        aria-label="Unpaid programmes"
         data-reveal-group
       >
         <div className="border-b border-seam pb-5">
-          <p className="label">Start here</p>
+          <p className="label">Unpaid</p>
           <Duo
             className="mt-4 max-w-3xl text-display-lg"
             lead="No selection, no application."
@@ -251,9 +256,8 @@ export default function Programmes() {
           />
         </div>
         <p className="measure mt-7 text-body-lg text-haze">
-          Neither of these pays and neither carries much weight on a resume. They are
-          still where almost everyone should start, because they teach the mechanics —
-          fork, branch, review, merge — somewhere the stakes are zero.
+          No pay, little resume weight — but the best place to learn fork, branch,
+          review, merge with zero stakes.
         </p>
 
         <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
@@ -277,7 +281,7 @@ export default function Programmes() {
         /* `relative` for the gutter note below — it anchors to this section, so
            it cannot drift when a section above it changes height. */
         className="band section relative pb-16 pt-16 sm:pb-24 sm:pt-24"
-        aria-label="Paid, selective programmes"
+        aria-label="Paid programmes"
         data-reveal-group
       >
         {/* Right gutter. A reader who has just been told these programmes are
@@ -308,7 +312,7 @@ export default function Programmes() {
           className="-right-40 top-40"
         />
         <div className="border-b border-seam pb-5">
-          <p className="label">Paid and competitive</p>
+          <p className="label">Paid</p>
           <Duo
             // max-w-4xl, matching every other display-lg Duo on the site, and the
             // step is measured rather than eyeballed. At 3xl this sentence needs
@@ -323,9 +327,8 @@ export default function Programmes() {
           />
         </div>
         <p className="measure mt-7 text-body-lg text-haze">
-          Five programmes that pay a stipend to people with no professional experience.
-          You do not need a degree, a CGPA or a referral for any of them — you need a
-          few months of visible contribution before the window opens.
+          {PAID.length} programmes that pay students a stipend. No degree, CGPA or referral
+          needed — just a few months of public contributions before the window opens.
         </p>
 
         <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
@@ -346,7 +349,7 @@ export default function Programmes() {
             their place.
 
             Its rows carried the same five fields ProgrammeField already renders
-            for #open-entry and #paid, from the same content/club.ts entries — so
+            for #open-entry and #paid, from the same content/programmes.ts entries — so
             every paid programme appeared twice on one page, the second time with
             less detail: no "who from the club has done it", no "start preparing".
             The shorter copy of a thing always looks like the authoritative one
@@ -423,10 +426,8 @@ export default function Programmes() {
             trail="Which is why starting now is the whole trick."
           />
           <p className="measure mt-4 text-body-lg text-haze">
-            Organisations pick contributors they already recognise. By the time a
-            proposal window opens, the people who get in have been committing to
-            that repository since autumn. Waiting a year does not delay you by a
-            year — it costs you the cycle.
+            Orgs pick people they already recognise — usually ones committing since
+            autumn. Wait a year and you lose the whole cycle.
           </p>
 
           <div className="mt-8 overflow-x-auto">
@@ -455,184 +456,11 @@ export default function Programmes() {
           </div>
         </section>
 
-        {/* ---- Tracks ------------------------------------------------------
-            A CARD GRID, not the stacked full-width rows this used to be.
-
-            The rows were three near-identical bands of text: a heading in a 20rem
-            left column, a paragraph in the right, repeated down the page. Nothing
-            about that shape said "these are three parallel choices, pick one" —
-            read top to bottom it looked like a sequence, which is the opposite of
-            what the section means. Three cards side by side ARE the argument:
-            equal weight, equal size, one decision.
-
-            Three columns rather than the reference's four, because there are three
-            tracks. A four-column grid with three cards leaves a hole in the row,
-            and inventing a fourth to fill it would put a programme on the page
-            that the club does not run. */}
-        <section
-          id="tracks"
-          className="section pt-10 sm:pt-14"
-          data-reveal-group
-        >
-          <p className="chip">Pick your path</p>
-          <Duo
-            className="mt-4 text-display-lg"
-            lead="What you can work on."
-            trail="Start where you are."
-          />
-
-          <div
-            className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            data-reveal-group
-          >
-            {TRACKS.map((track, i) => (
-              // `group` so the arrow in the footer link moves with a hover anywhere
-              // on the card; flex-col so the dark frame, the tags and the link line
-              // up across all three cards whatever the paragraph above them
-              // measures — see the flex-1 on the detail.
-              <article
-                key={track.name.trail}
-                className={`bento tint-${track.tint} group flex flex-col p-7`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  {/* A label, NOT a ranking. The tracks are parallel choices a
-                      member picks from by their own level, so the order carries no
-                      information and the headline no longer claims it does — each
-                      card states its own difficulty in `summary` and `tags`
-                      instead. The numeral stays because the card header is a
-                      two-item row (mark left, doodle right) and it reads as an
-                      index, but if it ever starts reading as 1st/2nd/3rd it should
-                      go rather than the headline bending back to an order. */}
-                  <span className="track-num" aria-hidden>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <Doodle
-                    kind="squiggle"
-                    className="mt-1 w-8 shrink-0"
-                    style={{ color: "var(--tint)" }}
-                  />
-                </div>
-
-                {/* Two-tone and two-line, which is the device the section headings
-                    already use (see Duo) at card scale. The break is authored in
-                    the content file rather than left to the wrap, so all three
-                    headings are two lines deep at every width and the cards keep a
-                    common baseline. */}
-                <h3 className="mt-5 font-display text-display-md font-bold leading-[1.3] tracking-[-0.02em]">
-                  {track.name.lead}
-                  <br />
-                  <span style={{ color: "var(--tint)" }}>
-                    {track.name.trail}
-                  </span>
-                </h3>
-
-                <p
-                  className="mt-3 font-mono text-xs"
-                  style={{ color: "var(--tint)" }}
-                >
-                  {track.summary}
-                </p>
-
-                {/* flex-1: the three paragraphs are 2, 4 and 2 sentences, so without
-                    it the code frames sit at three different heights and the row
-                    stops reading as a set. */}
-                <p className="mt-4 flex-1 text-body text-haze">{track.detail}</p>
-
-                {/* The dark frame, in place of the reference's screenshot panel —
-                    but a terminal rather than a mocked dashboard, because a fake UI
-                    on a page whose whole argument is verifiable evidence is the one
-                    thing this design cannot afford. Every line is a command a
-                    reader can run; see the note on Track.preview in club.ts.
-
-                    Fixed dark fill on both themes, like the other code frames on
-                    this page: a terminal is a terminal. */}
-                <div
-                  aria-hidden
-                  className="mt-4 overflow-hidden rounded-tile border border-white/10"
-                  style={{ background: "#0F172A" }}
-                >
-                  <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2">
-                    <span className="h-2 w-2 rounded-full bg-[#475569]" />
-                    <span className="h-2 w-2 rounded-full bg-[#475569]" />
-                    <span className="h-2 w-2 rounded-full bg-[#475569]" />
-                    <span
-                      // 11px, not 10 — scripts/qa.mjs treats anything below that
-                      // as too small to read on a phone, and it flags every line of
-                      // these preview frames. Same fix already applied to the bento
-                      // frames further up this file.
-                      className="ml-1.5 font-mono text-sm"
-                      style={{ color: "#94A3B8" }}
-                    >
-                      {track.preview.title}
-                    </span>
-                  </div>
-                  <div className="space-y-1 p-3 font-mono text-sm leading-relaxed">
-                    {track.preview.lines.map((l) => (
-                      <p
-                        key={l.text}
-                        style={{
-                          color: l.kind === "cmd" ? "#E2E8F0" : "#94A3B8",
-                        }}
-                      >
-                        {l.kind === "cmd" && (
-                          <span style={{ color: "#4ADE80" }}>$ </span>
-                        )}
-                        {l.text}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                <ul className="mt-5 flex flex-wrap gap-2">
-                  {track.tags.map((tag) => (
-                    <li key={tag} className="tag">
-                      {tag}
-                    </li>
-                  ))}
-                </ul>
-
-                {track.cta && (
-                  // mt-5 and self-start BOTH move to the wrapper. The margin because
-                  // `.tap` would eat it (see app/projects/page.tsx), and `self-start`
-                  // because it is a flex-item property — left on the inner link it
-                  // would be addressing a flex container that is no longer its
-                  // parent, and the card's CTA would stretch the full width.
-                  <div className="mt-5 self-start">
-                  <a
-                    href={track.cta.href}
-                    {...(track.cta.external
-                      ? { target: "_blank", rel: "noreferrer" }
-                      : {})}
-                    className="tap inline-flex items-center gap-2 font-label text-sm font-extrabold uppercase tracking-[0.06em]"
-                    style={{ color: "var(--tint)" }}
-                  >
-                    {track.cta.label}
-                    {/* Three links reading "How it goes" / "Where it lands" / "The
-                        repo" are clear beside their headings and useless in a screen
-                        reader's list of links, where they arrive with no card around
-                        them. The suffix gives each one its destination. */}
-                    <span className="sr-only">
-                      {" "}
-                      — {track.cta.external ? "opens GitHub, " : ""}
-                      {track.name.lead} {track.name.trail}
-                    </span>
-                    <Icon
-                      name="arrow-right"
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    />
-                  </a>
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-
       <NextAction
         eyebrow="Start now"
         lead="The applications open in spring."
         trail="The work that wins them starts in autumn."
-        body="Nobody is selected off a proposal alone. Come to a session, pick something small in a repo you like, and be a name the maintainers already recognise by the time it matters."
+        body="Come to a session, pick something small in a repo you like, and be a name maintainers know by spring."
         href={JOIN_HREF}
         cta="Join the club"
       />

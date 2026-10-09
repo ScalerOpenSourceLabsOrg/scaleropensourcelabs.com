@@ -179,7 +179,7 @@ export default function AdminDashboard() {
       } catch (e) {
         console.error("[osc] could not change membership", e);
         setMemberError(
-          `Could not change membership for ${r.name || r.email}. The rules refused it, or the connection dropped.`,
+          `Couldn't change membership for ${r.name || r.email} — the rules refused it, or the connection dropped.`,
         );
       } finally {
         setSaving(null);
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
     } catch (e) {
       console.error("[osc] could not load the dashboard", e);
       setError(
-        "Firestore refused the query. Either your address is not in the admins collection, or the rules are not deployed.",
+        "Firestore refused the query — you're not in admins, or the rules aren't deployed.",
       );
     } finally {
       setReloading(false);
@@ -461,8 +461,8 @@ export default function AdminDashboard() {
         </h2>
         <p className="measure mt-4 text-body text-haze">
           {user
-            ? "You are signed in, but your address is not on the organisers list. If it should be, ask somebody who already has access to add you."
-            : "Sign in with your college account first. If you are an organiser, this page will fill in."}
+            ? "You're signed in, but not on the organisers list. Ask an organiser to add you."
+            : "Organiser? Sign in with your college account first."}
         </p>
       </div>
     );
@@ -553,7 +553,7 @@ export default function AdminDashboard() {
               rows={breakdowns.path}
               total={breakdowns.withPath}
               empty="Nobody arrived through a path link yet."
-              footnote={`Of the ${breakdowns.withPath} member${breakdowns.withPath === 1 ? "" : "s"} who arrived through a link that named a path. It is not asked for, so most members have none.`}
+              footnote={`Of the ${breakdowns.withPath} member${breakdowns.withPath === 1 ? "" : "s"} who came in via a path link — it's optional, so most have none.`}
             />
           </div>
           <p className="text-sm leading-relaxed text-dust">
@@ -564,10 +564,8 @@ export default function AdminDashboard() {
         <div className="card rounded-panel bg-raise p-6">
           <h3 className="label">Breakdowns</h3>
           <p className="measure mt-3 text-sm leading-relaxed text-haze">
-            By batch, year, branch, hostel and route in. These are the only figures on this
-            page that cannot be counted in the database — batch and branch are read out of
-            each member&apos;s address rather than stored, so grouping by them means
-            loading every member.
+            By batch, year, branch, hostel and route in. These need every member loaded —
+            batch and branch aren&apos;t stored.
           </p>
           <button
             type="button"
@@ -578,17 +576,15 @@ export default function AdminDashboard() {
             {scanning ? "Loading everyone…" : `Load all ${stats.total} members`}
           </button>
           <p className="mt-3 text-xs text-dust">
-            Also switches the table below to the whole club, so search, sort and export
-            cover everybody rather than the rows loaded so far.
+            Also lets search, sort and export below cover the whole club.
           </p>
         </div>
       )}
 
       <p className="text-sm leading-relaxed text-dust">
-        Batch, branch and year are read from each member&apos;s college address rather than
-        asked for — <span className="font-mono text-haze">23bcs10045</span> is the 2023–27
-        batch, branch BCS. An address that does not follow that pattern is counted as{" "}
-        <strong className="text-haze">Unknown</strong> rather than guessed at.
+        Batch, branch and year come from the college address —{" "}
+        <span className="font-mono text-haze">23bcs10045</span> is 2023–27, BCS. Anything
+        else counts as <strong className="text-haze">Unknown</strong>.
       </p>
 
       {/* The list. Filtering is local — the whole membership is already in memory, so a
@@ -887,9 +883,8 @@ export default function AdminDashboard() {
       </div>
 
       <p className="text-sm leading-relaxed text-dust">
-        This is every member&apos;s own words about themselves, including their college
-        address. Treat the export the way you would a class list: it does not go in a
-        group chat, and it is not published on the site.
+        The export holds members&apos; personal details, college addresses included. Treat
+        it like a class list — never in a group chat, never on the site.
       </p>
 
     </div>

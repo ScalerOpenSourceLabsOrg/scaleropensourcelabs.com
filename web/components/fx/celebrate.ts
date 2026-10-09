@@ -31,7 +31,8 @@
     this list went with the lime .chip — it belonged to no other surface once the
     badges turned blue, and four confetti colours where the page has three reads
     as one stray colour rather than as a fourth. */
-const COLOURS = ["#0038FF", "#FFD600", "#10B981", "#6B21FF"];
+// GitHub's own: merged purple, link blue, added green, attention yellow.
+const COLOURS = ["#a371f7", "#4493f8", "#3fb950", "#e3b341"];
 
 function reducedMotion(): boolean {
   return (

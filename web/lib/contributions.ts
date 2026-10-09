@@ -44,6 +44,16 @@ export type Contributions = {
   github: string;
   merged: number;
   open: number;
+  /** Issues opened, in any state.
+   *
+   *  OPTIONAL, AND THE PANEL MUST NOT READ AN ABSENT ONE AS ZERO. Every row written
+   *  before the sync counted issues has no such field, so `issues ?? 0` would tell a
+   *  member who has filed a dozen bug reports that they have filed none — and it would
+   *  keep saying so until their next nightly sync. An em dash is the true answer: we have
+   *  not looked yet.
+   *
+   *  NOT FILTERED BY STATE, unlike the pull request counts. See functions/github.js. */
+  issues?: number;
   /** Distinct repositories with at least one merged PR. The number the club actually
    *  quotes, and not derivable from `merged`. */
   repos: number;
@@ -65,6 +75,24 @@ export async function readContributions(uid: string): Promise<Contributions | nu
   const { doc, getDoc } = await import("firebase/firestore");
   const snap = await getDoc(doc(db, CONTRIBUTIONS, uid));
   return snap.exists() ? ({ ...(snap.data() as Contributions) }) : null;
+}
+
+/** Every member's counts at once, keyed by uid. ADMINS ONLY — the `list` rule refuses
+ *  anybody else, which is what keeps this from being a leaderboard any member can build.
+ *
+ *  ONE QUERY, NOT ONE PER MEMBER. The collection holds a row per member who has given a
+ *  handle, which is a subset of the club and a few hundred documents at the outside — and
+ *  the alternative on the cohort screen was a getDoc inside a render loop.
+ *
+ *  ROWS ARE MISSING FOR ANYBODY THE SYNC HAS NOT REACHED, and the caller must treat an
+ *  absent row as "not known" rather than as zero. A member who joined yesterday has no row
+ *  at all until the nightly sweep gets to them. */
+export async function readAllContributions(): Promise<Map<string, Contributions>> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getDocs } = await import("firebase/firestore");
+  const snap = await getDocs(collection(db, CONTRIBUTIONS));
+  return new Map(snap.docs.map((d) => [d.id, { ...(d.data() as Contributions), uid: d.id }]));
 }
 
 /** What the callable can come back with, so the panel can say something specific.

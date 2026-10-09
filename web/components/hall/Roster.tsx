@@ -13,12 +13,12 @@
 // motion, no GPU, a locked-down browser, or a search crawler.
 
 import {
+  type Programme,
   PROGRAMME_COLOUR,
   PROGRAMME_NAME,
   PROGRAMME_SHORT,
-  publishedSelections,
-  type Programme,
-} from "@/content/club";
+} from "@/content/programmes";
+import { publishedSelections } from "@/content/selections";
 
 export default function Roster() {
   const people = publishedSelections();

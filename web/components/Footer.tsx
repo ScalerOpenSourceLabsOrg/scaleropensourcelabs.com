@@ -1,7 +1,7 @@
 // The footer, on every page.
 //
 // It carries the two audiences that have no page of their own — faculty and
-// sponsors, and maintainers — for the reason given over INSTITUTIONAL in club.ts:
+// sponsors, and maintainers — for the reason given over INSTITUTIONAL in site.ts:
 // every route is addressed to a student deciding whether to join, and a
 // "for sponsors" band inserted into one of them would compete with that page's
 // single next action. Chrome is the right place for an audience that is not the
@@ -29,10 +29,17 @@
 // and chrome is the only thing that reaches everyone. No content was dropped in
 // the merge — the three statements, the email CTA, the page list and the
 // trademark note are all still here, laid out as four columns instead of a card.
+//
+// THE THREE STATEMENTS HAVE SINCE GONE. "What we produce / How we run / What we
+// need" restated the home page on every route, under every page's own closing
+// action, so a reader who reached the bottom of anything met the club's pitch a
+// second time. INSTITUTIONAL stays in site.ts, unmounted; the email link is what a
+// faculty member or sponsor actually needs from here, and it stays.
 
 import Link from "next/link";
 import Console from "@/components/fx/Console";
-import { DASHBOARD_HREF, INSTITUTIONAL, JOIN_HREF, LINKS, PAGES } from "@/content/site";
+import Logo from "@/components/Logo";
+import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
 
 export default function Footer() {
   return (
@@ -50,13 +57,11 @@ export default function Footer() {
           className="grid gap-x-10 gap-y-12 md:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr]"
           data-reveal-group
         >
-          {/* The identity column. `font-display` has to state its own weight —
-              Space Grotesk defaults to 400 where the poster face it replaced shipped
-              one heavy cut, so a bare `font-display` looks like body copy at
-              headline size. See the type note at the head of globals.css. */}
+          {/* The identity column: the full lockup, tagline and all — the one place
+              with room for it. */}
           <div>
-            <p className="font-display text-display-md font-bold leading-none tracking-tight">
-              OSC
+            <p className="text-ink">
+              <Logo size="lg" tagline />
             </p>
             <p className="mt-6 max-w-[22rem] text-body text-ink/85">
               A student-run open source club at Scaler School of Technology.
@@ -104,15 +109,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* The three institutional statements, each under a hairline and a mono
-              label. */}
-          {INSTITUTIONAL.map((i) => (
-            <div key={i.title}>
-              <div className="h-px w-full bg-seam" />
-              <h2 className="label mt-3">{i.title}</h2>
-              <p className="mt-3 text-body text-ink/85">{i.body}</p>
-            </div>
-          ))}
         </div>
 
         {/* Every route, as one mono row, so it reads as wayfinding rather than as a
@@ -127,6 +123,18 @@ export default function Footer() {
             in. */}
         <nav aria-label="All pages" className="mt-12 border-t border-seam pt-7">
           <ul className="flex flex-wrap gap-x-7 gap-y-1" data-reveal-group>
+            {/* Home leads the row, and it is written out here because PAGES no longer
+                carries it: the bar drops it in favour of the wordmark, which the footer
+                does not have. This row is the site's index, so the route it indexes
+                first is the one at the root. */}
+            <li>
+              <Link
+                href="/"
+                className="tap link-u inline-block font-mono text-label uppercase text-haze transition-colors hover:text-ink"
+              >
+                Home
+              </Link>
+            </li>
             {PAGES.map((p) => (
               <li key={p.href}>
                 <Link
@@ -137,6 +145,16 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
+            {/* Not in the nav: /guide is somewhere a reader is sent from the home
+                page's explainer, not a choice the bar offers. The index lists it. */}
+            <li>
+              <Link
+                href="/guide"
+                className="tap link-u inline-block font-mono text-label uppercase text-haze transition-colors hover:text-ink"
+              >
+                Guide
+              </Link>
+            </li>
             {/* `link-u` like every entry above it. Without it this was the one item
                 in the row that did not underline on hover, which reads as the one item
                 that is not a link. */}
@@ -166,9 +184,7 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4">
           <p className="max-w-[34rem] text-sm leading-relaxed text-haze">
-            A student club at Scaler School of Technology. This website is one of the
-            club&apos;s own open-source projects — if you spot something wrong with
-            it, the fix is a pull request away.
+            This site is open source too. Spot a bug? Send a pull request.
           </p>
           <p className="font-mono text-label uppercase text-haze">
             scaleropensourcelabs.com
@@ -178,9 +194,7 @@ export default function Footer() {
         {/* Programme and organisation names appear throughout as plain type, never as
             logos. Stated once, site-wide, rather than repeated per section. */}
         <p className="mt-8 max-w-[60rem] font-mono text-sm leading-relaxed text-dust">
-          Programme and organisation names are trademarks of their respective owners.
-          Listing a selection or a contribution is a statement of fact about our
-          members, not an endorsement by any programme or company.
+          Names are trademarks of their owners. Listing them isn&apos;t an endorsement.
         </p>
 
         {/* The easter egg, at the very bottom, as a reward for getting there. */}

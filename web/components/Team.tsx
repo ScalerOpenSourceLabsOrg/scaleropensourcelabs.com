@@ -45,10 +45,19 @@
 // line crosses the leads' horizontal rail). A dashed line crossing a solid one
 // reads as two relationship types; two solid lines crossing reads as a mistake.
 //
-// The relationship is never carried by the line ALONE, though — each shadow card
-// names its role in text ("Shadow — Vice President"). A reader on a phone gets the
-// stacked list instead of the chart, and a screen reader gets only that list, so
-// the geometry has to be a redundant encoding of something already written down.
+// The dashed line says "attached to that role", which is deliberately the broader
+// claim, because the tier holds two kinds of attachment: a shadow is next in line
+// for the office, an aide works to it and is not. A third stroke for the second
+// kind was the alternative and it is worse — the chart's whole vocabulary is one
+// solid line against one dashed one, and a third would have to be told apart from
+// both. The difference is a word on the card instead, and the key at the foot of
+// the section defines every word it draws.
+//
+// The relationship is never carried by the line ALONE, though — each card in that
+// tier names its role in text ("Shadow — Vice President", "Aide — Repo
+// Maintainer"). A reader on a phone gets the stacked list instead of the chart, and
+// a screen reader gets only that list, so the geometry has to be a redundant
+// encoding of something already written down.
 //
 // WHY A DESK IS NOT A FOURTH ROW OF THE SAME KIND
 // Under the leads there is one more shape: a desk — several people doing one job
@@ -64,13 +73,13 @@
 
 import Portrait from "@/components/Portrait";
 import {
+  type Highlight,
   TEAM_CONTENT,
   TEAM_LEADS,
   TEAM_OFFICERS,
   TEAM_SHADOWS,
-  type Highlight,
   type TeamMember,
-} from "@/content/club";
+} from "@/content/team";
 
 const LEAD_COUNT = TEAM_LEADS.length;
 const OFFICER_COUNT = TEAM_OFFICERS.length;
@@ -125,7 +134,16 @@ const LEAD_D = "8rem";
 const SHADOW_D = "6.5rem";
 
 /** How wide a card is allowed to get, cell permitting. Caption wrapping tolerates it. */
-const CARD_MAX_W = "13.5rem";
+const CARD_MAX_W_REM = 13.5;
+const CARD_MAX_W = `${CARD_MAX_W_REM}rem`;
+
+/* THE NARROW END OF lg, where the grid is 960px — already the width every diameter
+   comment above reasons against, named here because the desk's dodge test needs it as
+   arithmetic rather than as prose. A rem-measured width is at its LARGEST share of the
+   grid here, so a clearance that holds at 960 holds at every width the chart renders
+   at. Widen the container and these cards only get relatively narrower. */
+const NARROW_GRID_PX = 960;
+const CARD_MAX_W_PCT = ((CARD_MAX_W_REM * 16) / NARROW_GRID_PX) * 100;
 
 type Placed = {
   member: TeamMember;
@@ -180,18 +198,31 @@ const SHADOWS: Placed[] = TEAM_SHADOWS.map((m): Placed | null => {
    grid, because that is what a percentage max-width resolves against. A lone
    shadow keeps the full width — with nothing to collide with, there is nothing to
    pay for. */
-function shadowMaxWidth(): string {
+/** Closest pair of tier-3 connectors, in grid percent. Infinity below two cards. */
+const SHADOW_GAP = (() => {
   const xs = SHADOWS.map((s) => s.x).sort((a, b) => a - b);
   let closest = Infinity;
   for (let i = 1; i < xs.length; i++) {
     closest = Math.min(closest, xs[i] - xs[i - 1]);
   }
-  if (!Number.isFinite(closest)) return CARD_MAX_W;
+  return closest;
+})();
+
+function shadowMaxWidth(): string {
+  if (!Number.isFinite(SHADOW_GAP)) return CARD_MAX_W;
   const cell = (LEAD_SPAN / COLS) * 100;
-  return `min(${CARD_MAX_W}, ${((closest / cell) * 100).toFixed(3)}%)`;
+  return `min(${CARD_MAX_W}, ${((SHADOW_GAP / cell) * 100).toFixed(3)}%)`;
 }
 
 const SHADOW_MAX_W = shadowMaxWidth();
+
+/* HOW FAR A TIER-3 CARD REACHES EITHER SIDE OF ITS OWN CONNECTOR, which is the one
+   number that says whether a line may be drawn at a given x without running through
+   somebody's face. It is half the width resolved above, and the `min` has to be
+   evaluated rather than assumed: with the cards far apart the rem cap binds, and with
+   them close together the gap cap does. Taking only the gap would declare a collision
+   whenever two cards merely sit in adjacent columns. */
+const TIER3_REACH = Math.min(SHADOW_GAP, CARD_MAX_W_PCT) / 2;
 
 /* ---------------------------------------------------------------------------
    THE DESK TIER. A desk hangs off one lead and is drawn as a band under the
@@ -216,6 +247,38 @@ const SHADOW_MAX_W = shadowMaxWidth();
 const DESK_LEAD = TEAM_LEADS.findIndex((l) => l.designation === TEAM_CONTENT.of);
 const DESK = DESK_LEAD >= 0 ? TEAM_CONTENT : null;
 const DESK_X = DESK_LEAD >= 0 ? LEAD_X[DESK_LEAD] : 0;
+
+/* WHERE THE DESK'S DROP RUNS WHILE IT PASSES THE TIER-3 ROW, and the one piece of
+   routing on this chart.
+   The drop used to go straight down the lead's centre, and that was safe only for as
+   long as the lead with a desk had nobody hanging off it — a tier-3 card sits on its
+   principal's centre, so the moment the Repo Maintainer had BOTH an aide and the
+   content desk, the solid drop and the aide's portrait wanted the same 50%. The line
+   would have run straight through the portrait.
+   So while it passes that row the drop steps aside to the nearest lead-column
+   BOUNDARY that is clear — the same invariant the VP's shadow line rides, and the
+   only kind of x on this chart guaranteed to fall between two lead columns rather
+   than inside one — then steps back under the lead before the desk's label, so the
+   label stays where it is true: under the office the desk reports to, rather than
+   floating between two.
+   Clear means further from every tier-3 connector than that card can reach. When
+   nothing is in the way this resolves to DESK_X and not a single line moves, which is
+   what keeps a chart with no aide on it drawn exactly as it was. If no boundary is
+   clear it gives up and returns DESK_X: a visibly crossed line, rather than a line
+   quietly routed somewhere it does not belong. */
+const DESK_DODGE_X = (() => {
+  if (!DESK) return DESK_X;
+  const blocked = (x: number) =>
+    SHADOWS.some((s) => Math.abs(s.x - x) < TIER3_REACH);
+  if (!blocked(DESK_X)) return DESK_X;
+  const boundaries = Array.from(
+    { length: LEAD_COUNT - 1 },
+    (_, i) => ((i + 1) / LEAD_COUNT) * 100,
+  ).sort((a, b) => Math.abs(a - DESK_X) - Math.abs(b - DESK_X));
+  return boundaries.find((b) => !blocked(b)) ?? DESK_X;
+})();
+
+const DESK_DODGES = DESK_DODGE_X !== DESK_X;
 const DESK_MEMBER_X = TEAM_CONTENT.members.map(
   (_, i) => ((i + 0.5) / TEAM_CONTENT.members.length) * 100,
 );
@@ -247,6 +310,26 @@ const DASHED = "border-dashed border-dust/50";
    tint is a plain `text-accent` rather than an inline style. */
 const CAPTION =
   "font-label text-sm font-semibold uppercase leading-[1.2] tracking-[0.07em]";
+
+/** A horizontal run between two percentages, in either order. Vertical position is
+    the caller's, via `className`, exactly as with VLine. */
+function HLine({
+  from,
+  to,
+  className = "",
+}: {
+  from: number;
+  to: number;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`absolute border-t ${SOLID} ${className}`}
+      style={{ left: `${Math.min(from, to)}%`, width: `${Math.abs(to - from)}%` }}
+    />
+  );
+}
 
 function VLine({
   x,
@@ -473,10 +556,32 @@ function Node({
   );
 }
 
-/** How a shadow's role is written out, so the line is never the only statement of it. */
+/** How a tier-3 role is written out, so the line is never the only statement of it. */
 function shadowLabel(s: Placed): string {
   return `${s.member.designation} — ${s.principal}`;
 }
+
+/* WHAT THE DASHED LINE MEANS, ONE SENTENCE PER DESIGNATION THAT IS ON THE CHART.
+   The stroke says only "attached to the role above". It cannot say WHICH kind of
+   attachment, because the tier holds two: a shadow is in line for the office, an
+   aide is not. Drawing them differently was the alternative and it is the worse
+   one — a third stroke would have to be told apart from both the solid reporting
+   line and the dashed one, on a chart whose only other distinction is that pair.
+   So the difference lives in the caption, where it is a word rather than a
+   texture, and this key defines the words.
+
+   Built from SHADOWS rather than written out, so it explains exactly the
+   designations present: fill the tier with shadows only and it collapses back to
+   the single line it has always been. A designation with no gloss still gets a row
+   — an unexplained word is better than a card the key silently ignores. */
+const TIER3_GLOSS: Record<string, string> = {
+  Shadow: "being trained to take that role over at handover.",
+  Aide: "working to that role, alongside the core.",
+};
+
+const TIER3_KEY = Array.from(
+  new Set(SHADOWS.map((s) => s.member.designation)),
+).map((d) => `${d} — ${TIER3_GLOSS[d] ?? "attached to that role."}`);
 
 export default function Team() {
   return (
@@ -633,8 +738,20 @@ export default function Team() {
             <VLine key={s.member.name} x={s.x} className="inset-y-0" dashed />
           ))}
           {/* The desk's drop leaves its lead here, directly beneath the card, and
-              keeps going past the shadow row to the band below. */}
-          {DESK && <VLine x={DESK_X} className="inset-y-0" />}
+              keeps going past the shadow row to the band below.
+              THE RAIL SITS AT THE VERY TOP OF THIS ROW when the drop has to step
+              aside, rather than halfway down it like every other jog on this chart,
+              and that is the whole difference between two readings. At the top it
+              leaves the LEAD'S CARD, and a reader sees one point under the office
+              from which a dashed line continues down to the aide and a solid one
+              goes sideways to the desk. Half a row lower it would appear to branch
+              off the dashed line instead, which would say the desk reports to the
+              aide. It also avoids laying a solid segment over the dashed one, which
+              renders as the dashed line simply disappearing. */}
+          {DESK && DESK_DODGES && (
+            <HLine from={DESK_X} to={DESK_DODGE_X} className="top-0" />
+          )}
+          {DESK && <VLine x={DESK_DODGE_X} className="inset-y-0" />}
         </div>
 
         {/* ---- Row 5: shadows, each in its principal's column ---- */}
@@ -658,25 +775,37 @@ export default function Team() {
 
         {DESK && (
           <>
-            {/* The drop crosses the shadow row on a lead-column BOUNDARY — the
-                same invariant row 3 relies on — so it threads between the shadow
-                cards rather than through one. When there are no shadows this row
-                has no height and the line is simply zero tall. */}
+            {/* The drop crosses the tier-3 row on whatever x cleared the cards in
+                it — the lead's own centre when nothing is in the way, a lead-column
+                boundary when something is. Either way it threads between the cards
+                rather than through one. When there are no shadows this row has no
+                height and the line is simply zero tall. */}
             <div
               aria-hidden
               className="pointer-events-none relative"
               style={{ gridRow: 5, gridColumn: `1 / span ${COLS}` }}
             >
-              <VLine x={DESK_X} className="inset-y-0" />
+              <VLine x={DESK_DODGE_X} className="inset-y-0" />
             </div>
 
-            {/* ---- Row 6: -> the desk's label ---- */}
+            {/* ---- Row 6: -> the desk's label ----
+                The step back, mid-row rather than at an edge: nothing else is drawn
+                in this row, so the jog has clear air either side of it and lands
+                vertically into the label below rather than arriving at it sideways. */}
             <div
               aria-hidden
               className="pointer-events-none relative h-16"
               style={{ gridRow: 6, gridColumn: `1 / span ${COLS}` }}
             >
-              <VLine x={DESK_X} className="inset-y-0" />
+              {DESK_DODGES ? (
+                <>
+                  <VLine x={DESK_DODGE_X} className="top-0 h-1/2" />
+                  <HLine from={DESK_DODGE_X} to={DESK_X} className="top-1/2" />
+                  <VLine x={DESK_X} className="bottom-0 top-1/2" />
+                </>
+              ) : (
+                <VLine x={DESK_X} className="inset-y-0" />
+              )}
             </div>
 
             {/* ---- Row 7: the label the drop reaches ----
@@ -705,12 +834,10 @@ export default function Team() {
               style={{ gridRow: 8, gridColumn: `1 / span ${COLS}` }}
             >
               <VLine x={DESK_X} className="top-0 h-1/2" />
-              <span
-                className={`absolute top-1/2 border-t ${SOLID}`}
-                style={{
-                  left: `${DESK_MEMBER_X[0]}%`,
-                  width: `${DESK_MEMBER_X[DESK_MEMBER_X.length - 1] - DESK_MEMBER_X[0]}%`,
-                }}
+              <HLine
+                from={DESK_MEMBER_X[0]}
+                to={DESK_MEMBER_X[DESK_MEMBER_X.length - 1]}
+                className="top-1/2"
               />
               {DESK_MEMBER_X.map((x) => (
                 <VLine key={x} x={x} className="top-1/2 bottom-0" />
@@ -889,15 +1016,24 @@ export default function Team() {
       </ul>
 
       {/* The key. A dashed line means nothing on its own, and a reader should not
-          have to infer it from the two cards it happens to connect. */}
-      {SHADOWS.length > 0 && (
-        <p className="mt-8 flex items-center gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
+          have to infer it from the two cards it happens to connect.
+          ONE swatch for however many lines, because there is only one stroke on the
+          chart to explain — repeating it beside each sentence would draw a
+          distinction the chart does not make. `items-start` with the swatch nudged
+          down to the first line's optical centre, so it reads as a label for the
+          block rather than as a bullet for its first row. */}
+      {TIER3_KEY.length > 0 && (
+        <div className="mt-8 flex items-start gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
           <span
             aria-hidden
-            className="h-0 w-8 shrink-0 border-t border-dashed border-dust/50"
+            className="mt-[0.5em] h-0 w-8 shrink-0 border-t border-dashed border-dust/50"
           />
-          Shadow — being trained to take that role over at handover.
-        </p>
+          <div className="space-y-1.5">
+            {TIER3_KEY.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
       )}
     </>
   );

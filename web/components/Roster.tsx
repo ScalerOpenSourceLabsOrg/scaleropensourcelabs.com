@@ -61,7 +61,7 @@ export default function Roster() {
       setRows(await readRoster());
     } catch (e) {
       console.error("[osc] could not read the roster", e);
-      setError("Could not load the roster. The rules may not be deployed.");
+      setError("Couldn't load the roster. Are the rules deployed?");
       setRows([]);
     }
   }, []);
@@ -106,19 +106,18 @@ export default function Roster() {
     setNote("");
     const key = email.trim().toLowerCase();
     if (!isCollegeAddress(key, ALLOWED_EMAIL_DOMAIN)) {
-      setError(`That has to be an @${ALLOWED_EMAIL_DOMAIN} address — no other address can sign in.`);
+      setError(`Use an @${ALLOWED_EMAIL_DOMAIN} address.`);
       return;
     }
     if (!form.name.trim()) {
-      setError("A roster row needs a name, because this is also what the team page shows.");
+      setError("Add a name — the team page shows it.");
       return;
     }
     // THE LOCKOUT GUARD, stated before the write rather than after the refusal. The rules
     // refuse it too; this is so the reason is a sentence instead of a permission error.
     if (self) {
       setError(
-        "You cannot change your own row. That is what stops an owner demoting themselves " +
-          "into a state only another owner can undo — ask one of the others.",
+        "You can't edit your own row — ask another owner.",
       );
       return;
     }
@@ -136,7 +135,7 @@ export default function Roster() {
     } catch (e) {
       console.error("[osc] could not save the roster row", e);
       setError(
-        "Firestore refused that. Either the rules are not deployed, or your row is not an owner.",
+        "Firestore said no. Check the rules are deployed and you're an owner.",
       );
     } finally {
       setBusy(false);
@@ -166,7 +165,7 @@ export default function Roster() {
       await load();
     } catch (e) {
       console.error("[osc] could not retire/restore", e);
-      setError("Could not change that. Only owners can, and never their own row.");
+      setError("Couldn't change that. Owners only, and not their own row.");
     }
   }
 
@@ -180,14 +179,12 @@ export default function Roster() {
         Who runs this, and who can let others in.
       </h3>
       <p className="measure mt-3 text-body text-haze">
-        One list. It decides who reaches this page <em>and</em> who appears on the public
-        team page, so there is nothing to keep in step by hand.
+        One list: who gets in here <em>and</em> who&apos;s on the team page.
       </p>
 
       {isOwner !== true && (
         <p className="mt-5 rounded-tile bg-sunk px-4 py-3 text-sm text-haze">
-          You can see the roster but not change it — that is kept to the owners, so that one
-          compromised account cannot appoint more. Ask an owner below.
+          View only — owners make changes. Ask one below.
         </p>
       )}
 
@@ -215,7 +212,7 @@ export default function Roster() {
           )}
           {self && (
             <p className="mt-1.5 text-sm text-ember">
-              That is you. Nobody can change their own row.
+              That&apos;s you — you can&apos;t edit your own row.
             </p>
           )}
         </div>
@@ -379,9 +376,8 @@ export default function Roster() {
             this list again. Said here, where it can be acted on, rather than in a doc. */}
         {rows !== null && owners < 2 && (
           <p className="mt-3 rounded-tile bg-sunk px-4 py-3 text-sm text-haze">
-            Only {owners === 0 ? "nobody is" : "one person is"} an owner. Make a second one
-            before they graduate — otherwise this list can never be changed again without
-            the Firebase console.
+            Only {owners === 0 ? "nobody is" : "one person is"} an owner. Add another before
+            they graduate, or this list gets locked.
           </p>
         )}
 
@@ -412,6 +408,24 @@ export default function Roster() {
                       {r.added_at ? ` · added ${fmtDate(r.added_at)}` : ""}
                     </p>
                   </div>
+                  {/* Loads the row into the form above — the same path as typing the
+                      address, which nobody would guess was how you edit. */}
+                  {isOwner === true && !isSelf && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                        setNote("");
+                        setEmail(r.email);
+                        const field = document.getElementById("ro-email");
+                        field?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        field?.focus({ preventScroll: true });
+                      }}
+                      className="tap shrink-0 font-mono text-label uppercase text-haze underline transition-colors hover:text-ink"
+                    >
+                      Edit
+                    </button>
+                  )}
                   {isOwner === true && !isSelf && (
                     <button
                       type="button"

@@ -223,6 +223,12 @@ for (const konst of [
   "RESPONSES",
   "SESSIONS",
   "CONTRIBUTIONS",
+  "ATTENDANCE",
+  // The other subcollection, at attendance/{sessionId}/present/{uid}. Same shape as
+  // RESPONSES above, and it matters more here than the path length suggests: this is the
+  // one holding who came to which Build Day, and an uncovered write would be denied by the
+  // catch-all in the middle of a roll call.
+  "PRESENT",
 ]) {
   const name = lib.match(new RegExp(`${konst}\\s*=\\s*"([^"]+)"`))?.[1] ?? null;
   const covered =
@@ -612,6 +618,18 @@ ok("contribution counts are written by no client",
 ok("a member may read only their own contributions",
   /match \/contributions\/\{uid\}[\s\S]*?allow get: if isStudent\(\) && \(request\.auth\.uid == uid \|\| isAdmin\(\)\)/.test(rules));
 
+// THE LEADERBOARD IS THE DERIVED VIEW OF THE BLOCK ABOVE, and these three assertions
+// exist to catch the one edit that would make it pointless: widening contributions to
+// `list` so a client could rank them itself. That edit looks like a simplification —
+// one fewer document, no Cloud Function — and it silently turns "a ranking" into "every
+// member may read every member's GitHub record".
+ok("the leaderboard is written by no client",
+  /match \/leaderboard\/\{id\}[\s\S]*?allow write: if false/.test(rules));
+ok("the leaderboard is for admitted members, not the whole domain",
+  /match \/leaderboard\/\{id\}[\s\S]*?allow get: if isClubMember\(\) \|\| isAdmin\(\)/.test(rules));
+ok("contributions still cannot be enumerated by a member",
+  /match \/contributions\/\{uid\}[\s\S]*?allow list: if isAdmin\(\)/.test(rules));
+
 
 // ---------------------------------------------------------------- membership
 //
@@ -680,6 +698,20 @@ ok("the three content shapes all validate audience",
 // write gate — this is the clause that closes the back door.
 ok("a form's audience also gates who may answer it",
   /match \/forms\/\{formId\}\/responses\/\{uid\}[\s\S]*?allow create: if isStudent\(\)[\s\S]{0,260}canAnswerForm\(formDoc\(formId\)\)/.test(rules));
+
+// THE BUILD DAY FLOOR. Phases are a closed set in both places, and a phase the library
+// offers but the rules do not know is a button that fails for every student who taps it.
+const floorLib = readFileSync(join(here, "..", "lib", "floor.ts"), "utf8");
+const floorPhases = new Set(
+  [...(floorLib.match(/export const PHASES = \[([\s\S]*?)\] as const;/)?.[1] ?? "")
+    .matchAll(/value:\s*"([^"]+)"/g)].map((m) => m[1]),
+);
+const rulesPhases = rulesSet("phase");
+ok("floor phases match lib/floor.ts", same(floorPhases, rulesPhases),
+  `lib ${show(floorPhases)} rules ${show(rulesPhases)}`);
+// Visible to every signed-in student by the club's decision — but signed-in, on-domain.
+ok("the floor is readable by students, not by the world",
+  /match \/floor\/\{sessionId\}\/students\/\{uid\} \{\s*allow get, list: if isStudent\(\);/.test(rules));
 
 console.log(
   failed === 0

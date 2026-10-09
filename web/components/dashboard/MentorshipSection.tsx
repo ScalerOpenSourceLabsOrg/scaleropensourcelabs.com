@@ -9,22 +9,47 @@
 //
 // On its own route it gets the whole column, which the picker genuinely needs: choosing a
 // mentor means reading several descriptions side by side, and that is a page, not a panel.
+//
+// ORGANISERS SEE THE RESULTS HERE, not the picker. They open the same sidebar link as
+// everybody else, and what they want from it is what everybody else chose. The picker is
+// one click away for an organiser who is also enrolling.
 
+import { useState } from "react";
 import RequireProfile from "@/components/dashboard/RequireProfile";
 import SectionHead from "@/components/dashboard/SectionHead";
+import MentorshipResults from "@/components/dashboard/MentorshipResults";
 import MentorPicker from "@/components/MentorPicker";
+import { useAuth } from "@/lib/auth";
 
 export default function MentorshipSection() {
+  const { isAdmin } = useAuth();
+  const [mine, setMine] = useState(false);
+  const results = isAdmin === true && !mine;
+
   return (
-    <RequireProfile loading="Loading the cohort…">
+    <RequireProfile loading="Loading…">
       {({ user }) => (
         <>
-          <SectionHead eyebrow="Programmes" title="Mentorship.">
-            The club runs a Google Summer of Code cohort: weekly sessions, proposal review,
-            and a mentor who has been through it recently. Enrolling records a preference —
-            an organiser pairs the cohort by hand once it closes.
+          <SectionHead
+            eyebrow="Programmes"
+            title="Mentorship."
+            action={
+              isAdmin === true ? (
+                <button
+                  type="button"
+                  onClick={() => setMine((v) => !v)}
+                  className="btn btn-secondary btn-compact"
+                >
+                  {mine ? "See results" : "My preferences"}
+                </button>
+              ) : undefined
+            }
+          >
+            {results
+              ? "Who members picked, mentor by mentor."
+              : "Pick your preferences — organisers pair everyone once enrolment closes."}
           </SectionHead>
-          <MentorPicker user={user} />
+          {results ? <MentorshipResults /> : <MentorPicker user={user} />}
         </>
       )}
     </RequireProfile>

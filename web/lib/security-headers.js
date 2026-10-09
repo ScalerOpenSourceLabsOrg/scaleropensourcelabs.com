@@ -171,6 +171,9 @@ function securityHeaders({ dev = isDev, authDomain = "", projectId = "" } = {}) 
  *  RewriteRules, for the same don't-let-them-drift reason as the headers. */
 const REDIRECTS = [
   { from: "/programs", to: "/programmes", permanent: true },
+  // Merged into /join (FAQ, who it is not for) and /guide (the PR loop). Not
+  // permanent, so a browser does not cache it if the route ever comes back.
+  { from: "/how-to-join", to: "/join", permanent: false },
 ];
 
 module.exports = { buildCSP, securityHeaders, REDIRECTS, isDev };

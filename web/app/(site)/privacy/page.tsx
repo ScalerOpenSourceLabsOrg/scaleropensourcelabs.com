@@ -90,9 +90,8 @@ export default function Privacy() {
               you signed up and when you last changed something.
             </p>
             <p>
-              That is the entire list — it is the <code>Profile</code> type in{" "}
-              <code>web/lib/profile.ts</code>, and this site is open source, so you can
-              check rather than take our word for it. There is no analytics account, no
+              That&apos;s the entire list — the <code>Profile</code> type in{" "}
+              <code>web/lib/profile.ts</code>. The site is open source, so you can check. There is no analytics account, no
               advertising identifier, no third-party tracker, and no data sold or shared
               with anybody outside the club.
             </p>
@@ -134,7 +133,7 @@ export default function Privacy() {
                 any programme
               </Link>{" "}
               — Google Summer of Code, LFX Mentorship and the rest select their own people
-              and the club has no say in it. Anyone who tells you otherwise is wrong.
+              and the club has no say in it.
             </p>
             <p>
               Sessions are open to any student at the university, and there is no
@@ -162,9 +161,8 @@ export default function Privacy() {
               whole document, not a flag on it.
             </p>
             <p>
-              An organiser does this by hand, so give it a few days. We are a handful of
-              students with a database, not a service desk, and we would rather say that
-              than print a deletion window we cannot keep.
+              An organiser does this by hand, so give it a few days. We&apos;re students,
+              not a service desk, so we won&apos;t promise a window we can&apos;t keep.
             </p>
             <p>
               Your Google account is not ours to touch. To take away this site&apos;s
@@ -178,15 +176,13 @@ export default function Privacy() {
                 your Google account&apos;s connections
               </a>
               . Deleting your record here does not sign you out of Google, and signing out
-              of Google does not delete your record — they are two separate things and it
-              is worth doing both.
+              of Google does not delete your record — do both.
             </p>
           </Part>
         </div>
 
         <p className="mt-10 border-t border-seam pt-6 text-sm leading-relaxed text-dust">
-          Something here wrong, or out of date against the code? This site is one of the
-          club&apos;s own repositories —{" "}
+          Something wrong or out of date? This site is open source —{" "}
           <a href={LINKS.repo} target="_blank" rel="noreferrer" className="link-u text-accent">
             open an issue
           </a>{" "}

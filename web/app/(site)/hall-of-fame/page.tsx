@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Doodle from "@/components/Doodle";
 import Duo from "@/components/Duo";
 import Hall from "@/components/hall/Hall";
-import Ticker from "@/components/Ticker";
 import NextAction from "@/components/NextAction";
 import Glow from "@/components/fx/Glow";
-import Sticker from "@/components/fx/Sticker";
 import Note from "@/components/fx/Note";
-import { CALENDAR } from "@/content/club";
+import { CALENDAR } from "@/content/programmes";
+import { JOIN_HREF } from "@/content/site";
 
 // THE HALL OF FAME. Students selected into international programmes.
 //
@@ -23,7 +22,7 @@ import { CALENDAR } from "@/content/club";
 //
 // `consented` gates every card. A real person's name and photograph do not render
 // without it, and the gate is in the data rather than in a reviewer's memory —
-// see the note at the head of club.ts.
+// see the note at the head of content/selections.ts.
 
 export const metadata: Metadata = {
   title: "Hall of Fame",
@@ -37,8 +36,8 @@ export default function HallOfFame() {
       {/* No separate title block on this route. The section below already opens
           with the eyebrow, the Duo and the standfirst that a page header would
           otherwise repeat verbatim two inches further up — so it carries
-          `.page-top` itself and is the header. The 25-card grid is the content and
-          it should start as high as the nav allows. */}
+          `.page-top` itself and is the header. The cohort grids are the content and
+          they should start as high as the nav allows. */}
         {/* ---- The hall: selections into international programmes ----------
             Placed first because it is the strongest thing the club can say. A
             named student next to "GSoC 2026" is proof somebody else ran a
@@ -91,30 +90,6 @@ export default function HallOfFame() {
               first thing under the nav. See the note over `.page-top` in globals.css
               for why the two cannot both be present. */}
           <div className="section page-top relative" data-reveal-group>
-            {/* Sticker 2 of 3. Right, level with the "Selected" eyebrow.
-                `top-28` put it across the headline from 1024 to about 1140: the
-                Duo below is capped at max-w-4xl, so its right edge is pinned at
-                920px whatever the window does, and a 182px sticker flush right
-                needs the window past ~1140 before the two stop meeting. Nothing
-                catches that — it is not overflow, and the QA sweep samples 1440,
-                which is clear.
-
-                The eyebrow's row is the right band to use and the padding strip
-                above it is not, which is worth writing down because the padding
-                looks like the safer choice: it is empty at every width, whereas
-                this row is only empty to the RIGHT of a 130px chip. But a
-                section's top padding is shared space — it reads as the gap after
-                the section above, and parked there this sticker sat against the
-                bottom corner of the apply form and looked like a comment on
-                somebody's half-filled sign-up form.
-                Level with the eyebrow it is unambiguously part of the hall, and
-                the chip beside it is short at every width there is. */}
-            <Sticker
-              text="git push --force 🚀"
-              rotate={2.5}
-              effect="bounce"
-              className="right-0 top-14 min-[1600px]:-right-4"
-            />
             {/* Left gutter — the right one is already carrying the sticker and
                 the glow. Pinned rather than taped, so the two decorations either
                 side of this heading are not one object mirrored.
@@ -171,8 +146,8 @@ export default function HallOfFame() {
               trail="GSoC, LFX Mentorship, C4GT, Summer of Bitcoin."
             />
             <p className="measure mt-4 text-body-lg text-haze">
-              These are competitive, international selection processes run by other
-              organisations. Getting in is not something a club can award itself.
+              Competitive, international, and run by other organisations. No club can
+              hand these out.
             </p>
           </div>
           {/* Hall used to sit outside the container because the WebGL stage was
@@ -192,19 +167,10 @@ export default function HallOfFame() {
           </div>
         </section>
 
-        {/* ---- The ticker ---------------------------------------------------
-            Between the hall and the section that answers it, and that position is
-            the reason it earns a place rather than being movement for its own
-            sake: the reader has just met a grid of names next to programme
-            credentials, and the strip names the ecosystems those credentials
-            belong to before "we are not checking whether you can already code"
-            takes the pressure back off.
-
-            It is also the only continuously moving element on the page. One is a
-            pulse; two would be a fairground, which is the same argument the hero
-            comment makes about a second spectacle cancelling the first. */}
-        <Ticker />
-
+      {/* The ticker of programme and ecosystem names used to sit here. It mixed
+          programmes members have been selected into with projects nobody has
+          (Kubernetes, PyTorch, Mozilla…), on the one page whose claim is that
+          every name is a real selection, so it went. Ticker.tsx is unmounted. */}
 
       {/* The alumni table used to sit here — "Alumni, and where they went",
           with a row per past core member and a "Now at" column. Removed rather
@@ -226,16 +192,14 @@ export default function HallOfFame() {
           self-contained removal.
 
           Incidentally better for the band rhythm: this section was a `.band` and so
-          is NextAction below it, which put two tinted blocks against each other.
-          The Ticker above is a plain `.section`, so the alternation now runs
-          plain → tinted the way it does everywhere else. */}
+          is NextAction below it, which put two tinted blocks against each other. */}
 
       <NextAction
         eyebrow="How they got there"
         lead="None of them were picked for a proposal."
         trail="They were picked for a commit history."
-        body="Every name above started with a first pull request into a project they had never touched. The route in is the same one it always was, and it is four steps long."
-        href="/how-to-join"
+        body="Every name above started with one pull request to a stranger's project. Yours can start tonight."
+        href={JOIN_HREF}
         cta="See how to join"
       />
     </main>

@@ -36,7 +36,7 @@
 //
 // THE STRIP IS HALF DERIVED AND HALF LOCAL, and the split is the point.
 //
-// The PROGRAMMES half is read out of club.ts, so this strip lists exactly the
+// The PROGRAMMES half is read out of content/programmes.ts, so this strip lists
 // programmes /programmes documents — no more, no fewer. It used to name two of
 // them by hand while that page described seven, which is the kind of drift that
 // is invisible until somebody notices the ticker is advertising a shorter list
@@ -44,7 +44,7 @@
 // appears here; remove one and it leaves.
 //
 // The PROJECTS half stays a local array, and deliberately does NOT move into
-// club.ts. Everything in that file is data some other section derives a claim
+// content/. Everything in there is data some other section derives a claim
 // from, and a reader meeting this list there would reasonably assume the club
 // has a relationship with each entry. It does not: this is the ecosystem the
 // work lands in, which is a weaker and truer statement.
@@ -58,9 +58,9 @@
 // and sourced. Keep this list aspirational-but-honest: ecosystems, not receipts.
 
 import { useState } from "react";
-import { PROGRAMME_SHORT } from "@/content/club";
+import { PROGRAMME_SHORT } from "@/content/programmes";
 
-/** Every programme the site documents, in the order club.ts declares them. */
+/** Every programme the site documents, in the order programmes.ts declares them. */
 const PROGRAMMES_IN_STRIP = Object.values(PROGRAMME_SHORT);
 
 /** Projects and foundations the work lands in. Names only — see the note above. */

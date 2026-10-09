@@ -13,9 +13,8 @@ export default function MembersPage() {
   return (
     <AdminGate>
       <SectionHead eyebrow="Organisers" title="Members.">
-        Everyone registered, and the breakdowns most often asked for. Batch, branch and year
-        are read from each member&apos;s college address rather than asked for, so they
-        cannot drift — and cannot be queried, which is why the breakdowns load on request.
+        Everyone who&apos;s joined. Batch, branch and year come from their college email, so
+        breakdowns load on request.
       </SectionHead>
       <AdminDashboard />
     </AdminGate>

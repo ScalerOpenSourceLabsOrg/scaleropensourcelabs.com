@@ -21,3 +21,11 @@ tsconfig.tsbuildinfo
 # Playwright capture output. The script is committed; its screenshots are not —
 # they are large, regenerable in one command, and would churn every run.
 study/
+
+# Member photos. A face is personal data and this repository is readable by anyone
+# with the clone URL, so the images live on the machines that deploy and go no
+# further. README.md is the instructions for adding one, not a photo, so it stays.
+# An absent file is a designed state, not a break: Portrait.tsx renders a monogram,
+# which is why a fresh clone and CI show initials rather than empty frames.
+public/people/*
+!public/people/README.md

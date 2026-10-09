@@ -19,11 +19,8 @@
 // lineage — the same name appearing as mentee in one row and mentor in another —
 // which demonstrates durability and cannot be faked.
 
-import {
-  PROGRAMME_COLOUR,
-  PROGRAMME_SHORT,
-  publishedMentors,
-} from "@/content/club";
+import { publishedMentors } from "@/content/mentors";
+import { PROGRAMME_COLOUR, PROGRAMME_SHORT } from "@/content/programmes";
 
 export default function Mentors() {
   const mentors = publishedMentors();
@@ -47,8 +44,7 @@ export default function Mentors() {
           is small, the small number is still more persuasive than "lifelong". */}
       {graduated > 0 && (
         <p className="measure mt-4 text-body text-haze">
-          {graduated} of the {mentors.length} mentors below have already graduated
-          and still take office hours.
+          {graduated} of {mentors.length} have graduated and still show up.
         </p>
       )}
 

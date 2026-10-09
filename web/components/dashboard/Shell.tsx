@@ -24,15 +24,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/Icon";
+import { LogoMark } from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
-import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { LINKS } from "@/content/site";
 
 type NavItem = {
   label: string;
   href: string;
-  icon: "grid" | "folder" | "settings" | "megaphone" | "compass";
+  icon: "grid" | "folder" | "settings" | "megaphone" | "compass" | "calendar" | "chart";
   /** Shown only while the reader is inside /admin. Six organiser links in a sidebar about
    *  a member's week would be six links most readers can never use. */
   adminArea?: boolean;
@@ -40,15 +40,16 @@ type NavItem = {
    *  anybody who asks for it, and what refuses a non-admin is firestore.rules, which
    *  denies every read the page depends on. */
   adminOnly?: boolean;
+  /** Only rendered for a floor mentor or an organiser — the people who work the help
+   *  queue at Build Days. A convenience, like adminOnly. */
+  floorOnly?: boolean;
   /** True when the destination is a section of this page rather than a route of its own.
    *  Kept explicit so the distinction is visible to whoever adds the real page. */
   anchor?: boolean;
 };
 
 const NAV: NavItem[] = [
-  // Dashboard stays in the list but is HIDDEN on /dashboard itself — see the filter in
-  // the sidebar. It is the only way back from the organisers' page, so removing it
-  // outright would strand an organiser there.
+  // The only way back from the organisers' page, so it can never be dropped from the list.
   { label: "Dashboard", href: "/dashboard", icon: "grid" },
   // THE ORGANISERS' PAGE HAD NO LINK ANYWHERE, which made it unreachable except by typing
   // the URL. It lived on the member dashboard's old header band, and rebuilding that page
@@ -70,6 +71,21 @@ const NAV: NavItem[] = [
   { label: "Mentors", href: "/admin/mentorship", icon: "megaphone", adminOnly: true, adminArea: true },
   { label: "Notices", href: "/admin/notices", icon: "megaphone", adminOnly: true, adminArea: true },
   { label: "Sessions", href: "/admin/sessions", icon: "grid", adminOnly: true, adminArea: true },
+  // "ROLL CALL", NOT "BUILD DAYS", AND THE TWO LABELS HAVE TO STAY DIFFERENT. Both items
+  // render at once inside /admin — this one because it is an adminArea item, the member's
+  // because it is not gated at all — so two rows reading "Build days" would sit adjacent in
+  // the same sidebar with different destinations. That is exactly the collision the
+  // Mentors/Mentorship note above describes, and it was only found by clicking.
+  //
+  // THE DISAMBIGUATION MOVED OFF THE MEMBER'S ROW AND ONTO THIS ONE. It used to be the
+  // member who carried the qualifier ("My Build Days") so that this row could keep the
+  // plain name — which put the awkward label on the row nearly everybody sees, to protect
+  // the one only organisers do. This screen is the roll call in its own page note and in
+  // its own standfirst; naming it that is both more accurate and cheaper.
+  { label: "Roll call", href: "/admin/build-days", icon: "calendar", adminOnly: true, adminArea: true },
+  // Reads the Build Days rather than recording one — the screen for picking the
+  // mentor-supported cohort. Named for the decision, not for the data.
+  { label: "Cohort", href: "/admin/cohort", icon: "compass", adminOnly: true, adminArea: true },
   { label: "Forms", href: "/admin/forms", icon: "folder", adminOnly: true, adminArea: true },
   { label: "Team", href: "/admin/team", icon: "settings", adminOnly: true, adminArea: true },
   // PULL REQUESTS IS GONE FOR NOW. It anchored to the GitHub panel, which cannot say
@@ -82,6 +98,26 @@ const NAV: NavItem[] = [
   // headline activity and the reason most people join, and it was below four weekly panels
   // on a page about the week — buried, and mixed in with things it has nothing to do with.
   { label: "Mentorship", href: "/dashboard/mentorship", icon: "compass" },
+  // THE CLUB'S DIARY, which existed only three rows at a time on the overview — a panel
+  // that answers "what is next" and renders nothing at all when the collection is empty.
+  // A member planning a month had no page to plan it from.
+  //
+  // THE SECOND CALENDAR ICON IN THIS LIST, and that is allowed where two identical LABELS
+  // would not be (see the Roll call note above): the icon says "something with a date in
+  // it" and the label says which. "What's on" is the club's diary; "Build days" is the
+  // member's own attendance record.
+  { label: "What's on", href: "/dashboard/events", icon: "calendar" },
+  // The member's own record — which build days they came to and what they were working on.
+  // See the label note on the organisers' item above before renaming either.
+  { label: "Build days", href: "/dashboard/build-days", icon: "calendar" },
+  // The mentors' side of a live Build Day. Not under /admin, because floor mentors are
+  // not organisers and /admin is gated on that.
+  { label: "Help queue", href: "/dashboard/build-days/floor", icon: "compass", floorOnly: true },
+  // THE RANKING, AND IT IS A PLACE YOU GO RATHER THAN A THING YOU ARE SHOWN. The overview
+  // deliberately does not open on a contribution total — a club whose pitch is "you do not
+  // need to be good yet" should not greet a first-year with their position. A member who
+  // wants the comparison can ask for it, which is what this row is.
+  { label: "Leaderboard", href: "/dashboard/leaderboard", icon: "chart" },
   // "MY DETAILS", NOT "SETTINGS". The design's word promised a settings page — notification
   // preferences, account options — and there are none: the only thing a member can change
   // about themselves is their profile. A label that names a page which does not exist is
@@ -95,14 +131,11 @@ const NAV: NavItem[] = [
 
 /** The sidebar's link styling.
  *
- *  THERE IS NO LONGER AN "ACTIVE" STATE, and that follows from the list above rather than
- *  being a separate decision. The design marked the current page with a yellow plate and a
- *  black keyline — the tokens this system uses for a CONTROL, a thing you press — on an
- *  item that, being the page you are already on, does nothing when pressed. The loudest
- *  object in the sidebar was the one dead link in it.
- *
- *  So the current page is not styled differently; it is simply not listed. The sidebar
- *  says where you can go, and the app bar above already says where you are. */
+ *  EVERY ITEM STAYS LISTED, INCLUDING THE PAGE YOU ARE ON. Dropping the current page made
+ *  the list reshuffle on every click — the row you just pressed vanished and the others
+ *  slid up under the pointer. The current page is marked with the accent tint (NAV_CURRENT)
+ *  rather than the design's yellow plate, because yellow-with-a-keyline is this system's
+ *  token for a control you press, and the current page does nothing when pressed. */
 /* NO `.tap` ON THESE ROWS, AND THAT IS THE FIX RATHER THAN A REGRESSION.
  *
  *  `.tap` is for a STANDALONE INLINE LINK: 14px of block padding with a matching -14px
@@ -123,10 +156,12 @@ const NAV: NavItem[] = [
  *
  *  `npm run qa` reports this as `tap-margin-clash`, which is what found it. */
 const NAV_CLASS =
-  "flex items-center gap-3 rounded-tile px-3.5 py-3 text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink";
+  "flex items-center gap-3 rounded-tile px-3.5 py-3 text-sm font-semibold transition-colors";
+const NAV_IDLE = "text-slate hover:bg-sunk hover:text-ink";
+const NAV_CURRENT = "bg-accent-soft text-accent";
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, floorMentor, signOut } = useAuth();
   const pathname = usePathname();
   /** ONBOARDING GETS THE BAR AND THE FOOTER AND NOTHING ELSE.
    *
@@ -157,6 +192,21 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         : (NAV.find((n) => n.href === pathname)?.label ?? (onAdmin ? "ORGANISERS" : "DASHBOARD"))
             .toUpperCase();
 
+  /** The nav, filtered once and rendered twice.
+   *
+   *  Admin-only items for admins and `adminArea` items only inside /admin. The current
+   *  page stays in — see NAV_CLASS.
+   *
+   *  HOISTED OUT OF THE SIDEBAR BECAUSE THERE ARE TWO NAVS NOW. Two copies of this
+   *  predicate would disagree the first time anybody added a flag to an item, and the
+   *  half that would disagree silently is the phone one. */
+  const items = NAV.filter(
+    (item) =>
+      (!item.adminOnly || isAdmin) &&
+      (!item.floorOnly || isAdmin || Boolean(floorMentor)) &&
+      (!item.adminArea || pathname.startsWith("/admin")),
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       {/* ------------------------------------------------------------- top bar
@@ -178,7 +228,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 table, the mentor list or the roster. A breadcrumb that names the wrong
                 page is worse than no breadcrumb: it is the one piece of chrome a reader
                 trusts to tell them where they are. */}
-            OSC <span className="text-dust">/</span> {crumb}
+            <span className="inline-flex items-center gap-2">
+              <LogoMark className="h-5 w-auto" />
+              <span className="sr-only">CherryPick</span>
+              <span className="text-dust">/</span> {crumb}
+            </span>
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {/* THE VIEW SWITCH, AND IT LIVES IN THE BAR RATHER THAN ONLY IN THE SIDEBAR.
@@ -220,6 +274,49 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+
+      {/* ------------------------------------------------- the same nav, on a phone
+          THE SIDEBAR IS lg+ ONLY, AND EVERY ROUTE IT LISTS WAS UNREACHABLE BELOW THAT.
+          The dashboard is six pages now — the diary, the leaderboard, mentorship, Build
+          Days, details, and the organisers' seven on top of those — and on a phone the
+          only one you could open was the overview. Nothing failed and no link 404'd: the
+          nav was in the DOM with `hidden` on it, which is the worst version of missing.
+
+          A SCROLLING ROW OF PILLS, NOT A HAMBURGER. A drawer is a control to learn, a
+          state to manage and an overlay to trap focus in, for a list of six links; a row
+          you can push sideways shows three of them at rest and needs no explanation. It
+          is sticky under the bar for the same reason the bar is sticky — you navigate
+          from wherever you have read to, not from the top.
+
+          `overflow-x-auto` WITH NO SCROLLBAR STYLING, deliberately: a touch device
+          already hides the bar and shows momentum, and the cut-off pill at the right edge
+          is the affordance. On a narrow desktop window the scrollbar is the affordance
+          instead, which is also correct there. */}
+      {!bare && items.length > 0 && (
+        <nav
+          aria-label="Dashboard sections"
+          className="sticky top-[56px] z-40 border-b border-seam bg-raise/95 backdrop-blur lg:hidden"
+        >
+          <div className="flex gap-2 overflow-x-auto px-4 py-2.5 sm:px-6">
+            {items.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                aria-current={item.href === pathname ? "page" : undefined}
+                /* 2.75rem IS 44px, THE FLOOR ITSELF (WCAG 2.5.5), reached by the pill's
+                   own height rather than by the negative margins `.tap` uses — these sit
+                   in a scrolling row with a painted border, so padding that grows the hit
+                   area would be visible and would overlap its neighbours. Same argument
+                   as the NAV_CLASS note above, on a horizontal axis. */
+                className={`flex min-h-[2.75rem] shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-seam px-3.5 text-sm font-semibold transition-colors ${item.href === pathname ? NAV_CURRENT : NAV_IDLE}`}
+              >
+                <Icon name={item.icon} size="1rem" strokeWidth={1.75} />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
 
       <div className="flex flex-1">
         {/* ----------------------------------------------------------- sidebar
@@ -279,25 +376,17 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </a>
 
           <nav aria-label="Dashboard" className="mt-6 flex flex-col gap-1.5">
-            {NAV
-              // Admin-only items for admins, and never the page you are already on: an
-              // item that navigates nowhere is not worth the row it sits in. Anchors are
-              // exempt because they scroll somewhere real on this same page.
-              // `adminArea` items appear only inside /admin — see the note on the field.
-              // The current page is filtered out rather than styled as current: a link to
-              // where you already are is the one dead item in a sidebar.
-              .filter(
-                (item) =>
-                  (!item.adminOnly || isAdmin) &&
-                  (!item.adminArea || pathname.startsWith("/admin")) &&
-                  (item.anchor || item.href !== pathname),
-              )
-              .map((item) => (
-                <Link key={item.label} href={item.href} className={NAV_CLASS}>
-                  <Icon name={item.icon} size="1.0625rem" strokeWidth={1.75} />
-                  {item.label}
-                </Link>
-              ))}
+            {items.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                aria-current={item.href === pathname ? "page" : undefined}
+                className={`${NAV_CLASS} ${item.href === pathname ? NAV_CURRENT : NAV_IDLE}`}
+              >
+                <Icon name={item.icon} size="1.0625rem" strokeWidth={1.75} />
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="mt-auto flex flex-col gap-1.5 border-t border-seam pt-4">
@@ -325,15 +414,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <main id="main" className="min-w-0 flex-1 px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
           <div className="mx-auto max-w-[72rem]">
             {children}
-            {/* THE DEV LOGIN LIVES ON THE SHELL, not on the cards that refuse you, and
-                that is the difference between a shortcut and a switch. Put on the sign-in
-                card alone it got you IN as somebody; here it is on all eleven signed-in
-                routes in every state, so swapping from the test member to the test
-                organiser and back is one click from wherever you already are rather than
-                sign out, /join, sign in.
-                Renders nothing unless an emulator is configured, and is not in the bundle
-                at all when one is not — see components/dev/DevLoginSlot.tsx. */}
-            <DevLoginSlot />
           </div>
         </main>
       </div>

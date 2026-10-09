@@ -179,6 +179,12 @@ for (const [name, engine] of Object.entries(ENGINES)) {
     return {
       target: Math.min(Math.round(r.width), Math.round(r.height)),
       links: panel ? panel.querySelectorAll("a").length : 0,
+      // The desktop strip, which is display:none at this width but still in the DOM.
+      // It is the honest expectation for what the panel must contain: every route the
+      // bar would show, plus whatever the bar drops on a phone. Counting it beats a
+      // hardcoded number, which is what stood here and which went stale twice — once
+      // when "How to Join" left the strip, once when the bar's "Sign in" link did.
+      stripLinks: strip ? strip.querySelectorAll("a").length : 0,
       stripHidden: !strip || getComputedStyle(strip).display === "none",
     };
   });
@@ -231,11 +237,17 @@ for (const [name, engine] of Object.entries(ENGINES)) {
   line(
     "nav menu at 390px",
     fade
-      ? `target=${fade.target}px links=${fade.links} strip-hidden=${fade.stripHidden}`
+      ? `target=${fade.target}px links=${fade.links}/${fade.stripLinks}+ strip-hidden=${fade.stripHidden}`
       : "MISSING",
-    // 6 routes + Sign in + GitHub, behind a control at or above the 44px touch floor,
-    // and the horizontal strip out of the way so it cannot hide anything.
-    fade ? fade.target >= 44 && fade.links >= 8 && fade.stripHidden : false,
+    // Every route the strip carries, plus at least one thing the bar drops on a phone
+    // (GitHub), behind a control at or above the 44px touch floor — and the horizontal
+    // strip out of the way so it cannot hide anything.
+    fade
+      ? fade.target >= 44 &&
+        fade.stripLinks > 0 &&
+        fade.links > fade.stripLinks &&
+        fade.stripHidden
+      : false,
   );
   if (errs.length) { if (counts) failures++; console.log(`    ${counts ? "FAIL" : "warn"} page errors: ${errs.slice(0,2).join(" | ")}`); }
   await b.close();

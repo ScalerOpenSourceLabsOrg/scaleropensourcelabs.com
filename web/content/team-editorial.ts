@@ -31,7 +31,7 @@
 // `npm run team:sync` refuses to build a page for an active member with no remit, and
 // names them. That is the forcing function: access is instant, publication is reviewed.
 
-import type { Highlight } from "@/content/club";
+import { type Highlight } from "@/content/team";
 
 export type Editorial = {
   remit: string;
@@ -41,7 +41,7 @@ export type Editorial = {
 /** Address -> what the page says about them. Lowercase keys, matching the roster. */
 export const TEAM_EDITORIAL: Record<string, Editorial> = {
   // ---------------------------------------------------------------------------
-  // SEEDED FROM content/club.ts, which held these alongside the names until the
+  // SEEDED FROM content/team.ts, which held these alongside the names until the
   // roster moved to Firestore. The prose is unchanged; only its home moved.
   //
   // The addresses below are placeholders and MUST be corrected to each person's real

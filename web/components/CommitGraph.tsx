@@ -149,8 +149,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
             The grey line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
-            The project&apos;s history — every change anyone has ever made to it,
-            public, in order, with names attached.
+            The project&apos;s history — every change, public, with names attached.
           </p>
         </li>
         <li>
@@ -158,8 +157,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
             The blue line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
-            Your branch. You copy the project, change something on your own copy, and
-            nothing you do here can break anybody else&apos;s work.
+            Your branch. Your own copy — you can&apos;t break anyone else&apos;s work.
           </p>
         </li>
         <li>
@@ -167,8 +165,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
             The filled dot
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
-            The merge. A maintainer agreed, and your change is now part of the grey
-            line — permanently, and for everyone who downloads it after.
+            The merge. A maintainer said yes — your change is in the grey line for good.
           </p>
         </li>
       </ol>

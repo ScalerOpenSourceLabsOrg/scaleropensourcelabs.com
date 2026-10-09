@@ -40,7 +40,7 @@ import { toDate } from "@/lib/profile";
 /** A number and what it counts. Not `.num` — that class is the small blue step badge
  *  used in numbered lists, and it renders a headline count as a chip-sized pill. The
  *  admin dashboard learned this the same way. */
-function Stat({ n, label }: { n: number; label: string }) {
+function Stat({ n, label }: { n: number | string; label: string }) {
   return (
     <div className="rounded-tile bg-sunk px-5 py-4">
       <p className="font-display text-display-md font-bold tabular-nums tracking-tight">
@@ -108,10 +108,10 @@ export default function Contributions({
       setRow(await readContributions(uid));
     } catch (e) {
       console.error("[osc] could not read contributions", e);
-      // Same shape as the forms' — "X didn't load. Give it a refresh?" A member who meets
-      // both in one session should not be able to tell that two different people wrote them.
-      // The board no longer carries this shape: it falls back to its empty state instead.
-      setError("Your GitHub activity didn't load. Give it a refresh?");
+      // Same shape as the forms' — "Could not load X. Reload to try again." A member who
+      // meets both in one session should not be able to tell that two different people
+      // wrote them. The board falls back to its empty state instead of carrying this.
+      setError("Could not load your GitHub activity. Reload to try again.");
       setRow(null);
     }
   }, [uid]);
@@ -137,11 +137,11 @@ export default function Contributions({
         // NOT AN ERROR, and it must not be worded as one. It means the numbers on
         // screen are already recent — telling somebody "that failed" when the answer is
         // "that was unnecessary" is the wrong sentence.
-        setNote("Already checked in the last few minutes — these numbers are current.");
+        setNote("Already up to date.");
       } else if (res.reason === "no-handle") {
         setError("Add your GitHub handle to your details first.");
       } else if (res.reason === "not-found") {
-        setError("GitHub has no account with that handle. Check it for a typo.");
+        setError("No GitHub account by that name — typo?");
         await load();
       } else {
         setError("GitHub did not answer. Try again in a minute.");
@@ -151,7 +151,7 @@ export default function Contributions({
       // not deployed, the region wrong, App Check refusing. The console gets the code;
       // the member gets a sentence that does not blame their account.
       console.error("[osc] refresh failed", e);
-      setError("We could not reach the sync just now. Try again in a minute.");
+      setError("Could not reach the sync. Try again in a minute.");
     } finally {
       setBusy(false);
     }
@@ -172,13 +172,8 @@ export default function Contributions({
   if (!handle?.trim()) {
     return (
       <Frame action={RefreshButton}>
-        <h3 className="font-display text-display-md font-bold tracking-tight">
-          Tell us where to look.
-        </h3>
-        <p className="measure mt-3 text-body text-haze">
-          Add your GitHub handle to your details and this panel starts keeping count of
-          every pull request you land — including the ones you have already forgotten
-          about.
+        <p className="measure text-body text-haze">
+          Add your GitHub handle to see your pull requests here.
         </p>
         <button type="button" onClick={onEditProfile} className="btn btn-primary mt-5">
           Add my GitHub handle
@@ -220,31 +215,33 @@ export default function Contributions({
 
       {stale && (
         <p className="mt-4 rounded-tile bg-sunk px-4 py-3 text-sm text-haze">
-          These are for <span className="font-mono text-ink">@{row!.github}</span>, the
-          handle we had before you changed it. Press “Check GitHub now” to count the new
-          one.
+          These are for <span className="font-mono text-ink">@{row!.github}</span>, your
+          old handle. Check GitHub now to count the new one.
         </p>
       )}
 
       {row === null ? (
         <p className="measure mt-4 text-body text-haze">
-          We have not counted yet. It happens automatically once a day, or you can ask for
-          it now.
+          Not counted yet. This syncs once a day, or check now.
         </p>
       ) : row.not_found ? (
         <p className="measure mt-4 text-body text-haze">
-          GitHub has no account called <span className="font-mono text-ink">@{row.github}</span>.
-          Almost always a typo —{" "}
+          GitHub has no account called <span className="font-mono text-ink">@{row.github}</span>.{" "}
           <button type="button" onClick={onEditProfile} className="tap link-u text-accent">
-            fix the handle
+            Fix the handle
           </button>{" "}
           and we will try again.
         </p>
       ) : (
         <>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat n={row.merged} label="pull requests merged" />
             <Stat n={row.open} label="still open" />
+            {/* AN EM DASH, NOT A ZERO, for a row synced before this number existed. The
+                two say completely different things — "you have opened none" against "we
+                have not counted yet" — and only the second is true until the nightly sync
+                reaches them. See the field note in lib/contributions.ts. */}
+            <Stat n={row.issues ?? "—"} label="issues opened" />
             <Stat n={row.repos} label="projects touched" />
           </div>
 
@@ -253,8 +250,7 @@ export default function Contributions({
                it is the one place this panel could make somebody feel behind. It does
                not: nothing is wrong, the count is simply waiting. */
             <p className="measure mt-6 text-body text-haze">
-              Nothing yet — which is exactly where almost everybody here started. Your
-              first one shows up on this panel the day it is merged.
+              Nothing yet. Your first merged pull request shows up here.
             </p>
           ) : (
             <ul className="mt-5 space-y-2.5">

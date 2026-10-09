@@ -61,7 +61,7 @@ export default function Composer() {
       setPosts(await readAnnouncements());
     } catch (e) {
       console.error("[osc] could not read the board", e);
-      setError("Could not load what is already posted. The rules may not be deployed.");
+      setError("Couldn't load the board. Are the rules deployed?");
       setPosts([]);
     }
   }, []);
@@ -80,7 +80,7 @@ export default function Composer() {
     setError("");
     setNote("");
     if (!isWellFormedPost({ title, body })) {
-      setError("A notice needs both a title and something to say.");
+      setError("Add a title and a message.");
       return;
     }
     // Checked here as well as in the rules so the reader gets a sentence instead of a
@@ -103,16 +103,16 @@ export default function Composer() {
       // stays on screen showing what the next one will be.
       setNote(
         audience === "members"
-          ? "Posted. Club members see it on their dashboard now."
+          ? "Posted. Members see it now."
           : audience === "students"
-            ? "Posted. Students who are not members see it; members will not."
-            : "Posted. Everyone who signs in sees it on their dashboard now.",
+            ? "Posted. Non-members only."
+            : "Posted. Everyone sees it now.",
       );
       await load();
     } catch (e) {
       console.error("[osc] could not post", e);
       setError(
-        "Firestore refused that. Either the rules are not deployed, or your address is not in the admins collection.",
+        "Firestore said no. Check the rules are deployed and you're an admin.",
       );
     } finally {
       setBusy(false);
@@ -159,8 +159,7 @@ export default function Composer() {
         Tell everyone something.
       </h3>
       <p className="measure mt-3 text-body text-haze">
-        This lands on every member&apos;s dashboard the moment you post it. Pin the one
-        that has to survive a fortnight.
+        Lands on dashboards instantly. Pin the ones that should stick around.
       </p>
 
       <div className="mt-6 space-y-4">
@@ -188,7 +187,7 @@ export default function Composer() {
             value={body}
             maxLength={2000}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Blank lines become paragraph breaks. Nothing else is formatted."
+            placeholder="Plain text. Blank lines make paragraphs."
           />
           {/* Only past halfway. A counter that is visible from the first keystroke reads
               as a limit somebody is about to hit; one that appears at 1000 characters is

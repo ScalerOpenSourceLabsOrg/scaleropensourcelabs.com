@@ -3,7 +3,7 @@
 //   node scripts/palette.mjs            check the live system
 //   node scripts/palette.mjs --legacy   re-check the retired per-programme hues
 //
-// This exists because club.ts used to carry a comment ASSERTING that the
+// This exists because the content files used to carry a comment ASSERTING that the
 // programme colours had been validated as a categorical palette. A comment is not
 // a check: it cannot fail, so it stayed true-looking while a fifth programme was
 // added in a hue that broke it, and nobody could tell. Run `--legacy` to see the
@@ -79,7 +79,8 @@ function token(blockStart, name) {
   );
 }
 
-/** The programme hues are plain hex rather than channel triples — see club.ts. */
+/** The programme hues are plain hex rather than channel triples — see
+    content/programmes.ts. */
 function progHex(blockStart, name) {
   const from = CSS.indexOf(blockStart);
   const block = CSS.slice(from, CSS.indexOf("\n}", from));
@@ -115,7 +116,8 @@ const THEMES = {
       OUTREACHY: progHex(LIGHT, "outreachy"),
       // The two open-tier programmes the merge added. Included here so the legacy
       // sweep covers all seven rather than the five it was written against — see
-      // the note over PROGRAMME_COLOUR in club.ts, which is explicit that these two
+      // the note over PROGRAMME_COLOUR in content/programmes.ts, which is explicit
+      // that these two
       // were picked by eye and not validated as part of the original set.
       GSSOC: progHex(LIGHT, "gssoc"),
       HACKTOBERFEST: progHex(LIGHT, "hacktoberfest"),

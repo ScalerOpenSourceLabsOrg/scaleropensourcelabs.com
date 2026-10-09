@@ -54,10 +54,7 @@ export default function NumbersStrip() {
           We are not going to invent numbers here.
         </p>
         <p className="measure mt-4 text-body text-haze">
-          This strip fills in from the other four pages as members land work and get
-          selected — members, merged pull requests, selections, active projects. It is
-          empty because the club is new, not because the page is unfinished, and we
-          would rather you read that than a rounded-up figure.
+          The club&apos;s new. These fill in as members ship and get selected.
         </p>
       </div>
     );

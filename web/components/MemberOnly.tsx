@@ -58,9 +58,8 @@ export default function MemberOnly({
       <GateCard>
         <p className="text-display-md font-semibold">Sign-in is not set up here.</p>
         <p className="measure mt-4 text-body text-haze">
-          This deployment has no Firebase configuration, so there is nothing to sign in
-          to. If you are running the site locally, see <code>web/.env.example</code>. If
-          you are seeing this on the live site, that is a bug — please tell us.
+          Running locally? See <code>web/.env.example</code>. Seeing this live? That&apos;s
+          a bug — tell us.
         </p>
         <a href={`mailto:${LINKS.email}`} className="btn btn-secondary mt-6">
           Email the organisers
@@ -81,14 +80,13 @@ export default function MemberOnly({
   if (user === null) {
     return (
       <GateCard>
-        <p className="chip">Members only</p>
-        <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
+        <h2 className="font-display text-display-md font-bold tracking-tight">
           Sign in first.
         </h2>
         <p className="measure mt-4 text-body text-haze">
-          This page is for club members. Sign in with your{" "}
-          <strong className="text-ink">@{DOMAIN}</strong> account and you will land back
-          here.
+          Members only. Sign in with your{" "}
+          <strong className="text-ink">@{DOMAIN}</strong> account and we&apos;ll bring you
+          back.
         </p>
         {/* The sign-in button itself is not repeated here. It lives on /join with the
             domain rule, the privacy links and the explanation of why Google — all of

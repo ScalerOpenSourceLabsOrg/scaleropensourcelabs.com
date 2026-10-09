@@ -31,25 +31,25 @@ const STEPS: {
 }[] = [
   {
     label: "You open the pull request",
-    body: "A branch with your change on it, plus a short description of what it fixes and why. This is the part that feels enormous and is actually the smallest.",
+    body: "Your branch, plus a line on what it fixes. Feels huge; it's the smallest step.",
     tone: "accent",
   },
   {
     label: "CI runs",
-    body: "The project's automated tests run against your branch. If they go red, that is information, not judgement — read the log and push another commit.",
+    body: "Tests run on your branch. Red is info, not judgement — read the log, push again.",
   },
   {
     label: "A maintainer reviews it",
-    body: "Somebody who knows the codebase reads your diff. On a busy project this can take days or weeks, and silence is almost never about you.",
+    body: "Someone reads your diff. It can take weeks — silence isn't about you.",
   },
   {
     label: "Changes requested",
-    body: "The normal case, including for people who do this professionally. It means a human read your work carefully enough to have an opinion about it. You push another commit and the thread continues.",
+    body: "Totally normal, even for pros. Someone cared enough to have opinions — push another commit.",
     tone: "ember",
   },
   {
     label: "Approved and merged",
-    body: "Your commit is now in the project's history with your name on it, and it stays there. That is the artefact — not a certificate, the commit.",
+    body: "Your name is in the project's history for good. That's the prize — not a certificate.",
     tone: "accent",
   },
 ];
@@ -106,9 +106,7 @@ export default function PRTimeline({ className = "" }: { className?: string }) {
       </ol>
 
       <figcaption className="mt-8 border-t border-seam pt-5 text-sm leading-relaxed text-dust">
-        This is the whole loop. Every open-source contribution anybody has ever made
-        went through these five steps, including the ones by people whose names are
-        on the projects.
+        That&apos;s the whole loop. Every contribution ever made went through it.
       </figcaption>
     </figure>
   );
