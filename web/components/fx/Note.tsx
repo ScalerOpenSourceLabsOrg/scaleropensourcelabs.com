@@ -47,38 +47,21 @@
 //                     shows the note at precisely the breakpoint where the
 //                     gutter is zero.
 //
-//   place="flow"    — for sections whose content is a LEFT-ALIGNED max-w-3xl
-//                     column. There are several hundred px of genuinely empty
-//                     container to the right of those, so the note sits INSIDE
-//                     at a small positive inset and appears from lg up rather
-//                     than waiting for a 1760px monitor. Most readers only ever
-//                     see these ones.
+//   place="flow"    — for sections whose heading is a LEFT-ALIGNED capped
+//                     column with empty container to its right. The note is
+//                     NOT absolutely positioned: it sits IN FLOW, as the second
+//                     item of a `lg:flex` row whose first item is the chip and
+//                     heading (`min-w-0 flex-1`). Wrap the call site in
+//                     <div className="lg:flex lg:items-start lg:gap-10">.
 //
-//                     A CENTRED section is never a flow section, however narrow
-//                     its heading looks. #join reads as a 3xl column and is not
-//                     one: the paragraph under it carries `.measure`, which is
-//                     44em of ITS OWN font-size — 44 x 24px = 1050px at body-lg,
-//                     wider than max-w-3xl and centred, so the free column is
-//                     ~80px a side and a note there overlaps the copy by 100px+.
-//                     Sections like that take a gutter note or none.
-//
-//                     IT IS ANCHORED BESIDE ITS COLUMN, NOT AGAINST THE
-//                     CONTAINER'S RIGHT EDGE, and `anchor` is the whole of that
-//                     — see the prop below. A flush-right flow note is correct
-//                     at lg and wrong at every width above it: the column it
-//                     annotates is CAPPED, so its ink stops at a fixed x while
-//                     the container keeps growing, and a note held against the
-//                     far edge drifts away from the thing it is annotating.
-//                     Measured, before this was fixed: 263px of gap beside
-//                     #mentors and 438px beside #why-us at 1800, i.e. a note
-//                     marooned in the middle of an empty half-section, reading
-//                     as decoration sent out to fill the margin rather than as a
-//                     remark about the paragraph.
-//
-//                     The clamp in `.note-flow` keeps the old flush-right
-//                     behaviour at the widths where there is no room for
-//                     anything better, so nothing has to be gated on a
-//                     breakpoint.
+//                     IT USED TO BE ABSOLUTE, at a hand-measured `anchor` in rem
+//                     from the container's left edge, and every anchor went stale
+//                     the moment the display face changed: the headline's ink
+//                     grew past the number and the note landed on it. In flow, the
+//                     heading wraps narrower instead — no measurement to rot, at
+//                     any font, zoom or width. The cost is that a note taller than
+//                     its heading pushes the next paragraph down; that is a gap,
+//                     not an overlap, and it is the right trade.
 //
 // A negative inset that hangs off the SCREEN rather than into a margin is not
 // caught by anything: `body { overflow-x: hidden }` clips the strip silently
@@ -131,7 +114,6 @@ export default function Note({
   fold = false,
   tilt = -2.5,
   place = "gutter",
-  anchor = 52,
   className = "",
 }: {
   /** The bold first line. Short — this is a note, not a paragraph. */
@@ -152,35 +134,8 @@ export default function Note({
   /** See the placement note above — this is not a style choice. */
   place?: "gutter" | "flow";
   /**
-   * FLOW NOTES ONLY. How far in rem the note's left edge sits from the
-   * container's left edge — i.e. just past the ink of the column it annotates.
-   *
-   * MEASURED, NEVER GUESSED, AND USUALLY NOT THE COLUMN'S CAP. Ragged text
-   * stops well short of its own max-width: #calendar's heading is capped at
-   * 56rem and its longest line ends at 789px, so anchoring off the cap would
-   * leave 150px of gap for nothing. Take the furthest-right ink inside the
-   * note's y band at 1024, 1100, 1180, 1280 and 1440 (scripts/tmp-measure.mjs
-   * prints exactly that), take the LARGEST — a narrow window wraps the column
-   * differently and can push ink further right than a wide one — and add about
-   * 40px of air.
-   *
-   * WITH ONE EXCEPTION THAT COST A ROUND OF THIS: if any line in the band ever
-   * fills the column, the measurement is not a fact about the copy, it is a
-   * fact about the width you happened to sample. #why-us's headline reaches
-   * exactly its 56rem cap at 1180 and stops 170px short of it at 1440, so it
-   * has to be anchored off the CAP. Sample the odd widths — 1100, 1180, 1230 —
-   * before trusting a number, and if the largest ink you find is within ~30px
-   * of the cap, use the cap.
-   *
-   * TOO SMALL LANDS ON THE TEXT and nothing will catch it but
-   * scripts/tmp-notes-check.mjs, which is why that script exists. Too large is
-   * merely the drift this prop was added to remove. The clamp handles the other
-   * end: it can never push the note off the container.
-   */
-  anchor?: number;
-  /**
    * VERTICAL INSET ONLY — `top-*`/`bottom-*`. Horizontal placement belongs to
-   * `place` and `anchor`, both of which carry arithmetic a call site cannot see.
+   * `place`, which carries arithmetic a call site cannot see.
    *
    * The one exception is the gutter note's margin offset, which has to be
    * written here because its SIGN is the side it hangs off: `-left-40` or
@@ -215,32 +170,14 @@ export default function Note({
       // comment at the top of this file describes, arriving through a container
       // change rather than through a bad offset.
       ? "hidden w-40 min-[1760px]:block"
-      // A FLOW NOTE GROWS ONCE ITS COLUMN DOES. The void beside a max-w-3xl
-      // section is about 200px at lg and 500-600px from 1280 up, so a note held
-      // at 160px everywhere leaves most of that column blank. 224px from xl
-      // fills it without ever coming near the copy: at 1280 the free column is
-      // 464px, so a 224px note at right-4 still clears the text by 220px.
-      //
-      // It cannot grow at lg as well — 224 + 16 of inset is more than the 208px
-      // of void there, and the note would land on the paragraph.
-      //
-      // `.note-flow` supplies the horizontal position from --note-anchor below;
-      // both of the widths named here are the ones its clamp is written against,
-      // so the three move together.
-      : "note-flow hidden w-40 lg:block xl:w-56";
+      // In flow beside its heading — see the placement note above. shrink-0 so
+      // the heading gives way, never the note; 224px from xl, where the void
+      // beside a max-w-4xl heading has room for it.
+      : "relative hidden w-40 shrink-0 lg:block xl:w-56";
 
   return (
     <div
-      className={`absolute z-10 ${placement} ${className}`}
-      // The anchor rides in as a custom property for the same reason --tilt does
-      // one level down: it is a per-note number, and Tailwind cannot generate a
-      // class built at runtime. A gutter note has no use for it — its offset is
-      // its own width, in the margin — so it is not sent one.
-      style={
-        place === "flow"
-          ? ({ ["--note-anchor" as string]: `${anchor}rem` } as React.CSSProperties)
-          : undefined
-      }
+      className={`${place === "gutter" ? "absolute" : ""} z-10 ${placement} ${className}`}
     >
       <div
         // The rest angle rides in as a custom property rather than a class, so

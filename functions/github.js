@@ -18,9 +18,12 @@
 // WHAT IT COSTS, AND WHICH LIMIT IT COSTS AGAINST. GitHub meters search separately from
 // everything else, and this file touches both meters:
 //
-//   /search/issues   TWO requests per member (merged, then open), against the SEARCH
-//                    limit — 10 per minute unauthenticated, 30 with a token. This is the
-//                    binding constraint, and the throttle in index.js is sized against it.
+//   /search/issues   THREE requests per member (merged, then open, then issues opened),
+//                    against the SEARCH limit — 10 per minute unauthenticated, 30 with a
+//                    token. This is the binding constraint, and GAP_MS in index.js is
+//                    sized against it: change the number of searches here and that
+//                    constant has to move with it, or the sweep starts rate-limiting
+//                    itself halfway through the club.
 //   /users/{handle}  ONE request per member, against the CORE limit — 60 per hour
 //                    unauthenticated, 5,000 with a token. Effectively free with a token
 //                    and the first thing to break without one.
@@ -166,12 +169,12 @@ async function fetchContributions(handle, token) {
   }
 
   if (!(await exists(h, token))) {
-    return { github: h, merged: 0, open: 0, repos: 0, recent: [], not_found: true };
+    return { github: h, merged: 0, open: 0, issues: 0, repos: 0, recent: [], not_found: true };
   }
 
-  // Two requests, merged first. If the second is rate-limited the first is still thrown
-  // away — a row with real merged counts and a zeroed `open` would be a lie that looks
-  // like data, and the caller's retry is cheap.
+  // Three requests, merged first. If a later one is rate-limited the earlier ones are
+  // still thrown away — a row with real merged counts and a zeroed `open` would be a lie
+  // that looks like data, and the caller's retry is cheap.
   //
   // PAGE_MAX ON THE MERGED SEARCH, NOT RECENT, AND THAT IS NOT A TYPO. The list only
   // shows RECENT rows, so asking for eight would seem to be enough — but `repos` is
@@ -181,6 +184,15 @@ async function fetchContributions(handle, token) {
   // fact rather than a truncation. One page of 100 costs exactly the same one request.
   const merged = await search(`type:pr is:merged author:${h}`, token, PAGE_MAX);
   const open = await search(`type:pr is:open author:${h}`, token, 1);
+  // ISSUES OPENED, IN ANY STATE, and the absence of a state filter is the decision.
+  // `is:open` would count only the ones nobody has dealt with yet, so a member whose
+  // reports were all triaged and closed would read zero — which is the opposite of what
+  // happened. Reporting a bug well is a contribution whatever the maintainer then does
+  // with it, and unlike a pull request there is no "rejected" state that makes the raw
+  // count flattering: an issue is either raised or it is not.
+  //
+  // `per_page=1` because nothing lists these. Only the total is stored.
+  const issues = await search(`type:issue author:${h}`, token, 1);
 
   const all = merged.items.map((i) => toPull(i, "merged"));
 
@@ -188,6 +200,7 @@ async function fetchContributions(handle, token) {
     github: h,
     merged: merged.total,
     open: open.total,
+    issues: issues.total,
     // Distinct repositories among the merged PRs this request returned. GitHub's search
     // API has no distinct-repository count, so this is derived — and it is therefore
     // EXACT up to PAGE_MAX merged pull requests and an undercount past it. A second page

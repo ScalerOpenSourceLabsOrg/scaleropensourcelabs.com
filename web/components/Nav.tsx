@@ -51,9 +51,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Logo from "@/components/Logo";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
-import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
+import { JOIN_HREF, LINKS, PAGES } from "@/content/site";
 
 /** The hamburger, and its open state. Three lines because a nav is a list.
  *  aria-hidden: the button carries the accessible name. */
@@ -120,16 +121,24 @@ export default function Nav() {
         // animation-timeline get the bar exactly as it was.
         className="nav-plate plate mx-auto flex h-[56px] max-w-[88rem] items-center justify-between gap-3 rounded-tile border border-seam/70 px-3 sm:gap-4 sm:px-6"
       >
+        {/* THE WORDMARK IS THE HOME LINK, and since the strip stopped listing "/"
+            it is the only one in the bar. That is the whole reason the entry went:
+            two controls in the same 56px plate pointing at the same route taught a
+            reader nothing, and the wordmark is the one every site has trained them
+            to press. It keeps the accent hover so it reads as a link rather than a
+            logo that happens to be clickable. */}
         <Link
           href="/"
-          className="-my-[12px] inline-block shrink-0 py-[12px] text-sm font-extrabold tracking-tight text-ink transition-colors duration-200 ease-in-out hover:text-accent"
+          aria-label="CherryPick — home"
+          aria-current={pathname === "/" ? "page" : undefined}
+          className="-my-[12px] inline-block shrink-0 py-[12px] text-ink transition-colors duration-200 ease-in-out hover:text-accent"
         >
-          OSC
+          <Logo />
         </Link>
 
         {/* THE STRIP IS md+ ONLY NOW, AND BELOW THAT THERE IS A MENU.
             It used to scroll horizontally at every width, with a mask fading its right
-            edge to say "there is more this way". That was a reasonable answer to "six
+            edge to say "there is more this way". That was a reasonable answer to "the
             links do not fit across 390px" and it did not work: measured at 390, the
             list was a 187px-wide window onto 407px of links, so four of the six
             destinations — Hall of Fame, Team, How to Join, and most of Programmes —
@@ -137,19 +146,18 @@ export default function Nav() {
             readers will not think to drag. A site whose nav hides two-thirds of itself
             on the commonest phone size does not have a nav on phones.
 
-            So: the inline strip at md+, where all six genuinely fit, and a disclosure
-            below it. The panel is the same list, stacked, with the two items the bar
-            drops on small screens — GitHub and Sign in — put back, since they have
-            nowhere else to be at that width.
+            So: the inline strip at md+, where they all genuinely fit, and a disclosure
+            below it. The panel is the same list, stacked, with the one item the bar
+            drops on small screens — GitHub — put back, since it has nowhere else to be
+            at that width.
 
             The mask stays for the md→lg band, where the strip is inline but can still
             run tight against the right-hand group. */}
         <ul className="scroll-strip hidden min-w-0 flex-1 items-center gap-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1.75rem),transparent)] md:flex md:[mask-image:none] lg:flex-none lg:justify-center">
           {PAGES.map((p) => {
-            // Exact match for "/", prefix match for the rest — so /projects marks
-            // itself and "/" does not mark itself on every page.
-            const current =
-              p.href === "/" ? pathname === "/" : pathname.startsWith(p.href);
+            // Prefix match, so /projects/foo still marks Projects. "/" is not in
+            // the list any more, so there is no entry that would match every route.
+            const current = pathname.startsWith(p.href);
             return (
               <li key={p.href}>
                 <Link
@@ -199,44 +207,21 @@ export default function Nav() {
               in-page CTAs all over the site; if the bar wore it too, the one control
               that is on screen at every scroll position would look like every other
               button. Yellow makes it the single loudest thing in the chrome. */}
-          {/* SIGNING IN IS NOT JOINING, and this link is the only place in the site's
-              chrome that says so. The button beside it goes to the application form —
-              no account, one submission, written by a stranger. A member who did that in
-              August and just wants back in needs a different door, and the bar offered
-              them none: an existing member on a new laptop, or after clearing their
-              cookies, pressed the only control there was and landed on an application
-              form with no sign-in anywhere on it. /join carries a line pointing at the
-              dashboard as well, but a sentence above a form is not wayfinding — the bar
-              is, and it is on screen at every scroll position.
+          {/* A "SIGN IN" LINK STOOD HERE, POINTING AT /dashboard, and it is gone.
+              The argument for it was that a returning member needs a door the
+              application form is not — and that argument was answered by the door
+              itself rather than by a second control: /join IS a sign-in card now,
+              not an anonymous form, so the yellow button beside this comment takes
+              a stranger and a member of two years to the same "continue with your
+              college account" tap, and the gate forwards anybody who already has a
+              session straight on to /dashboard. Two controls one inch apart that
+              resolve to the same act is a choice a reader has to make for no reason.
 
-              QUIET, AND DELIBERATELY NOT A SECOND BUTTON. Almost nobody reading this
-              site is a member yet, and two filled controls side by side would ask every
-              one of them to work out which of two things they are before they can act.
-              A plain link is found by the person looking for it and skimmed past by
-              everybody else, which is the right weighting for a returning-member
-              affordance in a bar whose job is to recruit new ones.
-
-              IT DOES NOT DEPEND ON THE SESSION. This link and the button beside it used
-              to swap on `user` — the link vanished and the button relabelled itself to
-              "Dashboard" once somebody was signed in. The bar does no access control and
-              never did, so all that state bought was a control that read differently
-              depending on which browser you opened the site in, and a member who WAS
-              signed in lost the only door in the chrome that names the members' area.
-              One label, every reader, every visit: /dashboard shows the sign-in card to
-              a stranger and the dashboard to a member, which is where that branch
-              belongs.
-
-              sm+ ONLY, for the reason the GitHub link above is lg+ only: at 390px the
-              route strip is already scrolling, and the bar's optional items yield before
-              the plate is allowed to grow. A phone reader who presses "Join" still meets
-              the sign-in line above the form on /join, and the footer carries it at
-              every width. */}
-          <Link
-            href={DASHBOARD_HREF}
-            className="nav-link -my-[12px] hidden shrink-0 whitespace-nowrap py-[12px] sm:inline-block"
-          >
-            Sign in
-          </Link>
+              The footer still names /dashboard explicitly, at every width, for
+              somebody who wants the members' area by name rather than by signing
+              in — see the route row in Footer.tsx. That is the right weight for it:
+              found by the person looking for it, out of the way of the one job this
+              bar has. */}
           <Link href={JOIN_HREF} className="btn btn-pop btn-compact shrink-0">
             Join
           </Link>
@@ -272,8 +257,7 @@ export default function Nav() {
         >
           <ul className="flex flex-col">
             {PAGES.map((p) => {
-              const current =
-                p.href === "/" ? pathname === "/" : pathname.startsWith(p.href);
+              const current = pathname.startsWith(p.href);
               return (
                 <li key={p.href}>
                   <Link
@@ -294,15 +278,11 @@ export default function Nav() {
               );
             })}
           </ul>
-          {/* The two the bar drops below sm. They have nowhere else to be at this
-              width, and "Sign in" in particular is the returning member's only door. */}
+          {/* GitHub, which the bar drops below lg and which has nowhere else to be at
+              this width. "Sign in" used to sit above it and went with the bar's copy:
+              the Join button is in the plate directly above this panel at every width,
+              it is a sign-in, and a member pressing it lands on the dashboard. */}
           <div className="mt-2 flex flex-col border-t border-seam pt-2">
-            <Link
-              href={DASHBOARD_HREF}
-              className="block rounded-inline px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunk"
-            >
-              Sign in
-            </Link>
             <a
               href={LINKS.github}
               target="_blank"

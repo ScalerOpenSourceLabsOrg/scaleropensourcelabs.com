@@ -3,7 +3,7 @@
 // GSoC mentorship: enrol, and say which mentor you want.
 //
 // NOT components/Mentors.tsx. That is the public marketing section, hard-coded in
-// content/club.ts and consent-gated. This is the signed-in half — mentors an organiser
+// content/mentors.ts and consent-gated. This is the signed-in half — mentors an organiser
 // publishes from the dashboard, and the preferences members record against them.
 //
 // THE SHAPE OF THE ASK. A first choice, and then exactly one of two things: a second
@@ -51,6 +51,8 @@ import {
   type Mentor,
 } from "@/lib/mentorship";
 import { LINKS } from "@/content/site";
+import { photoFor } from "@/content/lookup";
+import Portrait from "@/components/Portrait";
 
 /** The one programme this card is about. The data model carries a programme on every
  *  mentor and every enrollment so a second one needs no schema change — but only GSoC is
@@ -116,7 +118,16 @@ function MentorCard({
       />
       <span className="flex w-full flex-col rounded-panel border border-seam bg-sunk p-5 transition hover:border-accent/50 peer-checked:border-accent peer-checked:bg-raise peer-checked:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)] peer-focus-visible:border-accent peer-focus-visible:shadow-[0_0_0_3px_rgb(var(--sky)/0.35)]">
         <span className="flex items-start justify-between gap-3">
-          <span className="min-w-0">
+          {/* The photo the public site already holds for this name, by lookup rather
+              than a field on the mentor row: an organiser should not have to upload a
+              picture the hall of fame already has. No match, and Portrait draws the
+              same identicon it does everywhere else. */}
+          <Portrait
+            name={mentor.name}
+            photo={photoFor(mentor.name)}
+            className="h-[4.5rem] w-14 shrink-0 rounded-tile"
+          />
+          <span className="min-w-0 flex-1">
             <span className="block text-body-lg font-semibold text-ink">{mentor.name}</span>
             {mentor.org && (
               <span className="mt-0.5 block font-mono text-sm text-dust">
@@ -181,7 +192,7 @@ function NoneCard({ checked, onChange }: { checked: boolean; onChange: () => voi
             What is left states the choice and nothing else. It is a legitimate answer and
             the card does not editorialise about it. */}
         <span className="mt-3 block text-sm leading-relaxed text-haze">
-          You only want your first preference.
+          No backup needed.
         </span>
       </span>
     </label>
@@ -352,9 +363,7 @@ export default function MentorPicker({ user }: { user: User }) {
       {enrollment && !open && (
         <>
           <p className="measure mt-4 text-body text-haze">
-            Your preferences are recorded. An organiser pairs the cohort by hand once
-            enrolment closes, so this is what they will be working from — it is not a
-            confirmed mentor yet.
+            Saved. Pairings happen once enrolment closes — not confirmed yet.
           </p>
           {/* RANKED ROWS, NOT A DEFINITION LIST. The old markup was a `<dl>` with
               "First preference" in a 14rem label column — correct semantics for a term
@@ -368,7 +377,7 @@ export default function MentorPicker({ user }: { user: User }) {
               [
                 "02",
                 enrollment.first_only
-                  ? "No second choice — you asked for your first preference only."
+                  ? "No backup — first choice only."
                   : mentorLabel(names, enrollment.mentor_2),
                 !enrollment.first_only,
               ],
@@ -421,17 +430,15 @@ export default function MentorPicker({ user }: { user: User }) {
       {!enrollment && !open && (
         <>
           <p className="measure mt-4 text-body text-haze">
-            The club runs a GSoC cohort: weekly sessions, proposal review, and a mentor
-            who has been through it recently. If you want in, say so here and pick the
-            mentors you would like to work with.
+            Our GSoC cohort: weekly sessions, proposal reviews, a mentor who&apos;s been
+            there. Want in? Pick your mentors.
           </p>
           {choosable.length === 0 ? (
             // AN HONEST EMPTY STATE, not a disabled button. Nobody has published a mentor
             // yet, and telling the reader that is more useful than a control that does
             // nothing when pressed.
             <p className="mt-6 rounded-tile border border-dashed border-seam p-5 text-sm leading-relaxed text-dust">
-              No mentors have been published yet. Enrolment opens when the organisers add
-              them — check back, or ask in the club channel.
+              No mentors yet — check back soon.
             </p>
           ) : (
             <button type="button" onClick={openPicker} className="btn btn-primary mt-6">
@@ -500,8 +507,7 @@ export default function MentorPicker({ user }: { user: User }) {
                 Who would you most like to work with?
               </legend>
               <p className="measure mt-2 text-body text-haze">
-                Read what each of them is useful for. You are not committing to anything —
-                an organiser pairs the cohort by hand at the end.
+                Not binding — we pair everyone at the end.
               </p>
               <div className="mt-6 grid gap-3 lg:grid-cols-2">
                 {choosable.map((m) => (
@@ -534,7 +540,7 @@ export default function MentorPicker({ user }: { user: User }) {
                 <strong className="font-semibold text-ink">
                   {mentorLabel(names, first)}
                 </strong>
-                . Pick somebody else as a backup, or say you would rather wait for them.
+                . Pick a backup, or skip it.
               </p>
               <div className="mt-6 grid gap-3 lg:grid-cols-2">
                 {remaining.map((m) => (
@@ -617,7 +623,7 @@ export default function MentorPicker({ user }: { user: User }) {
               <p className="text-sm text-dust">
                 {step === 1
                   ? "Choose a mentor to continue."
-                  : "Choose a backup, or say you only want your first choice."}
+                  : "Pick a backup, or skip it."}
               </p>
             )}
           </div>

@@ -5,7 +5,7 @@
 // WHAT THIS REPLACED, AND WHY. This box used to be a live-looking feed of named
 // students — "Prateek Singh 46 merged in OWASP/OpenCRE", "Ojas Maheshwari
 // selected into GSoC", "+12 more this cohort". Every line was true and every
-// line was read from content/club.ts, so it was not a factual problem. It was a
+// line was read from the content files, so it was not a factual problem. It was a
 // FAIRNESS problem, and that is the harder one:
 //
 //   * Four names fit. Fifteen people are in the cohort. The four in the hero
@@ -210,15 +210,16 @@ export default function Terminal() {
       // oversight. Two reasons, either of which is sufficient: a screen reader
       // would announce a re-typing command line on a loop with no way to stop
       // it, and the same sequence already exists as real prose in the "how you
-      // actually start" list further down the page (PATH in content/club.ts).
+      // actually start" list further down the page (PATH in content/tracks.ts).
       // This is a decorative restatement of that list.
       aria-hidden
       className="overflow-hidden rounded-panel border border-white/10"
       style={{
-        background: "#0F172A",
-        // Ambient indigo rather than neutral, so the card looks lit by the
-        // headline gradient beside it instead of merely raised.
-        boxShadow: "0 20px 50px rgba(99, 102, 241, 0.25)",
+        // GitHub's deepest ground, and a hard offset shadow in the accent like the
+        // buttons. The indigo halo it replaced was lit by a headline gradient
+        // that no longer exists.
+        background: "#010409",
+        boxShadow: "6px 6px 0 0 rgb(var(--accent) / 0.35)",
       }}
     >
       {/* Title bar. The three dots are the one piece of pure decoration here,

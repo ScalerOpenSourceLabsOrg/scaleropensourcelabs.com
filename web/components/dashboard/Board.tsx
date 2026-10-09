@@ -70,20 +70,12 @@ export default function Board() {
 
       {posts === null && (
         <p className="text-body text-haze" aria-busy="true">
-          Loading the board…
+          Loading…
         </p>
       )}
 
       {posts?.length === 0 && (
-        <>
-          <h3 className="font-display text-display-md font-bold tracking-tight">
-            No notices at the moment
-          </h3>
-          <p className="measure mt-3 text-body text-haze">
-            When there is a session, a deadline worth catching, or a repo that suddenly
-            needs hands, it lands here first.
-          </p>
-        </>
+        <p className="text-body text-haze">No notices at the moment.</p>
       )}
 
       {posts && posts.length > 0 && (

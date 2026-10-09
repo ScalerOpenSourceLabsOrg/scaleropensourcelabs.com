@@ -33,6 +33,13 @@ export type SessionDoc = {
   starts_at: unknown;
   /** Who the session is for. Absent means everyone — see lib/audience.ts. */
   audience?: Audience;
+  /** `"build-day"` marks a session the club takes a roll at, and is the key
+   *  attendance/{sessionId} hangs off — see lib/buildDays.ts.
+   *
+   *  ABSENT MEANS AN ORDINARY SESSION, which is what every session scheduled before this
+   *  field existed is. Nothing queries on it, so unlike `audience` an absent one costs
+   *  nothing and needs no backfill. */
+  kind?: "build-day";
   created_by: string;
   created_at?: unknown;
   updated_at?: unknown;
@@ -90,6 +97,7 @@ export async function saveSession(
     notes?: string;
     starts_at: Date;
     audience: Audience;
+    buildDay?: boolean;
   },
   existing: SessionDoc | null,
 ): Promise<string> {
@@ -113,6 +121,12 @@ export async function saveSession(
   // Always written, never omitted — a session with no audience key is invisible to the
   // members' and students' queries alike. See the same note in lib/announcements.ts.
   body.audience = data.audience;
+  // OMITTED WHEN FALSE RATHER THAN WRITTEN AS ONE OF TWO VALUES, which is the opposite of
+  // `audience` directly above and is right for the opposite reason. Nothing queries on
+  // `kind`, so an absent key is read in memory as "an ordinary session" — and the rules
+  // only accept the one value, so there is no false to write. Unticking the box on a
+  // session that had it is therefore a genuine removal, not a write of `false`.
+  if (data.buildDay) body.kind = "build-day";
   if (!existing) body.created_at = serverTimestamp();
   else if (existing.created_at) body.created_at = existing.created_at;
 

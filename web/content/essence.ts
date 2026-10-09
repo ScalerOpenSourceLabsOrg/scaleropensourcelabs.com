@@ -36,9 +36,9 @@ export const EVERYDAY: Everyday[] = [
   {
     name: "Linux",
     what:
-      "The operating system inside every Android phone, and on the servers behind almost every website you loaded today.",
+      "Inside every Android phone, and behind almost every website you visited today.",
     fact:
-      "Written in public since 1991 and still is. Anyone can read the code that boots your phone, and thousands of people a year change it.",
+      "Built in public since 1991. Thousands of people change it every year.",
     repo: "https://github.com/torvalds/linux",
     language: "C",
   },
@@ -46,7 +46,7 @@ export const EVERYDAY: Everyday[] = [
     name: "Python",
     what: "Probably the first language you came across.",
     fact:
-      "The interpreter that runs your code is called CPython, and its source, its bug tracker and the arguments about its design are all public.",
+      "The interpreter, CPython, is public — source, bug tracker and design arguments included.",
     repo: "https://github.com/python/cpython",
     language: "C, Python",
   },
@@ -54,7 +54,7 @@ export const EVERYDAY: Everyday[] = [
     name: "VS Code",
     what: "The editor you almost certainly have open on the other monitor.",
     fact:
-      "Its source is public under the MIT licence — the build Microsoft ships adds a few closed pieces on top, which is a distinction worth knowing rather than glossing over.",
+      "The source is MIT-licensed. Microsoft's own build adds a few closed bits on top.",
     repo: "https://github.com/microsoft/vscode",
     language: "TypeScript",
   },
@@ -62,7 +62,7 @@ export const EVERYDAY: Everyday[] = [
     name: "Git",
     what: "The thing you type commands at without being sure what they do.",
     fact:
-      "Written by Linus Torvalds in 2005 because the Linux kernel needed it, and open from the first commit. You can read that commit.",
+      "Linus Torvalds wrote it in 2005 for the Linux kernel. Open from the first commit — you can read it.",
     repo: "https://github.com/git/git",
     language: "C",
   },
@@ -76,15 +76,15 @@ export const EVERYDAY: Everyday[] = [
 export const WHAT_IT_IS: { title: string; body: string }[] = [
   {
     title: "Built in the open",
-    body: "Every change is a public proposal. You can read the code, the discussion about the code, and the reason a change was refused. Nothing happens in a meeting you were not in.",
+    body: "Every change is a public proposal. Read the code, the debate, and why things got refused.",
   },
   {
     title: "By anyone",
-    body: "There is no application to read the code and no permission needed to suggest a change. A second-year in Bengaluru and a staff engineer in Berlin open pull requests through the same door.",
+    body: "No permission needed. A second-year in Bengaluru and a staff engineer in Berlin use the same door.",
   },
   {
     title: "For everyone",
-    body: "The result is free for anybody to use, including the companies that will interview you. That is why your commits in these repositories are worth something to them.",
+    body: "Free for anyone — including the companies that'll interview you. That's why your commits matter to them.",
   },
 ];
 
@@ -112,7 +112,7 @@ export const WHAT_IT_IS: { title: string; body: string }[] = [
 export const MAINTAINERS: { title: string; body: string }[] = [
   {
     title: "Often not paid for it",
-    body: "The person who reviews your first pull request is often doing it in the evening, after the job that does pay them, because they care about the project.",
+    body: "Whoever reviews your first PR is often doing it after their day job, just because they care.",
   },
   {
     // The original draft of this said the census was run "because nobody could say who
@@ -120,11 +120,11 @@ export const MAINTAINERS: { title: string; body: string }[] = [
     // which packages are most used, not who maintains them — so the claim now matches
     // the source, and the inference that follows is marked as an inference.
     title: "Nobody had even mapped it",
-    body: "The Linux Foundation, the OpenSSF and Harvard ran a census just to establish which packages the world's software depends on. That the question needed research tells you nobody is in charge of keeping it working.",
+    body: "The Linux Foundation, OpenSSF and Harvard needed a whole census just to find out which packages the world depends on. So nobody's really in charge.",
   },
   {
     title: "Which is why review feels slow",
-    body: "A pull request sitting for three weeks is almost never about you or your code. It is one person with a backlog and a day job. Knowing that turns the wait from a rejection into a queue.",
+    body: "A PR sitting for three weeks is almost never about you. It's one person with a backlog and a day job — a queue, not a rejection.",
   },
 ];
 
@@ -155,17 +155,17 @@ export const GLOSSARY: { term: string; meaning: string }[] = [
   {
     term: "upstream",
     meaning:
-      "The original project, as opposed to your copy of it. “Landed upstream” means the real project took your change — which is the only version that counts.",
+      "The original project, not your copy. “Landed upstream” means the real project took your change.",
   },
   {
     term: "fork",
     meaning:
-      "Your own copy of the project on GitHub. You work here, so nothing you do can break anybody else's work.",
+      "Your own copy of the project on GitHub. Break whatever you like — it's yours.",
   },
   {
     term: "good first issue",
     meaning:
-      "A label maintainers add to tasks they have deliberately sized for somebody new. Filtering by it is not cheating; it is the intended use.",
+      "A label for tasks sized for newcomers. Filtering by it isn't cheating — it's the point.",
   },
   {
     term: "maintainer",
@@ -175,7 +175,7 @@ export const GLOSSARY: { term: string; meaning: string }[] = [
   {
     term: "triage",
     meaning:
-      "Reading new issues and working out what they actually are. Unglamorous, endless, and one of the most welcome things a newcomer can help with.",
+      "Sorting new issues into what they actually are. Unglamorous, endless, and hugely welcome help.",
   },
   {
     term: "nit",
@@ -185,12 +185,12 @@ export const GLOSSARY: { term: string; meaning: string }[] = [
   {
     term: "LGTM",
     meaning:
-      "“Looks good to me.” An approval. The first time somebody writes it under your patch is a genuinely good day.",
+      "“Looks good to me.” An approval. Your first one is a great day.",
   },
   {
     term: "rebase",
     meaning:
-      "Replaying your commits on top of the latest upstream code, so the history stays a straight line instead of a knot. Most projects will ask you to do this at least once.",
+      "Replaying your commits on top of the latest upstream, so history stays a line, not a knot. You'll be asked to at least once.",
   },
   {
     term: "squash",
@@ -200,17 +200,17 @@ export const GLOSSARY: { term: string; meaning: string }[] = [
   {
     term: "licence",
     meaning:
-      "The terms the code is released under. MIT and Apache-2.0 let anyone use it including companies; the GPL additionally requires that derived work stays open. This is what makes open source a legal arrangement rather than just published code.",
+      "The terms the code ships under. MIT and Apache-2.0 let anyone use it; the GPL also requires derived work to stay open.",
   },
   {
     term: "CLA",
     meaning:
-      "A Contributor License Agreement. Some foundations ask you to sign one before your first merge. It is routine, it is not a trap, and it takes two minutes.",
+      "A Contributor License Agreement. Some foundations want one before your first merge. Routine, not a trap, two minutes.",
   },
   {
     term: "RFC",
     meaning:
-      "A written proposal for a change big enough that people should argue about it before anyone writes code. Reading old ones is the fastest way to learn how a project thinks.",
+      "A written proposal for a change big enough to argue about first. Old ones show you how a project thinks.",
   },
 ];
 
@@ -312,15 +312,15 @@ export const POSITIONING: Claim[] = [
   },
 ];
 
-// TRADE_OFFS — "what we are worse at" — LIVES IN club.ts, not here.
+// TRADE_OFFS — "what we are worse at" — LIVES IN content/positioning.ts, not here.
 //
-// Both branches of this site carried a copy, and they had drifted: club.ts's has a
+// Both branches of this site carried a copy, and they had drifted: that one has a
 // fifth entry about quant and high-frequency trading, where this file's stopped at
 // four. A duplicated array is a duplicated array whichever copy is longer, so the
 // superset stays and this one is gone rather than being kept "in sync" by hand.
 //
 // It is still rendered, on the same section it always was — see /positioning on the
-// home page, which imports it from club.ts alongside POSITIONING above.
+// home page, which imports it from content/positioning.ts alongside POSITIONING above.
 
 // ---------------------------------------------------------------------------
 // 4. MEMBER STORIES, FIRST PERSON.

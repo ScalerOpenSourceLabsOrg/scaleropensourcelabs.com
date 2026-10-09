@@ -200,10 +200,12 @@ const orgErrs = [];
 org.on("pageerror", (e) => orgErrs.push(e.message.slice(0, 120)));
 
 await signIn(ctxA, org, ORG, "Test Organiser");
-await org.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded", timeout: 60000 });
-await org.waitForTimeout(5000);
+// Mentors are published from the admin area's own Mentorship route, not the overview.
+await org.goto(`${BASE}/admin/mentorship`, { waitUntil: "domcontentloaded", timeout: 120000 });
+await org.getByRole("button", { name: /add a mentor/i }).first().waitFor({ timeout: 120000 }).catch(() => {});
+await org.waitForTimeout(3000);
 
-ok("the organiser reaches the admin page", (await org.getByText(/admin dashboard/i).count()) > 0);
+ok("the organiser reaches the admin page", (await org.getByText(/^mentorship\.?$/i).count()) > 0);
 
 const addBtn = org.getByRole("button", { name: /add a mentor/i });
 ok("the admin page offers 'Add a mentor'", (await addBtn.count()) > 0);

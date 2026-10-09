@@ -1,12 +1,12 @@
-// PEOPLE, minus the people club.ts already owns.
+// PEOPLE, minus the people content/team.ts and content/selections.ts already own.
 //
 // This module is what survived a merge between two versions of the site that had
-// both grown their own roster. The rule applied throughout was that club.ts wins
+// both grown their own roster. The rule applied throughout was that those lists win
 // on anything both files describe, so what is here is strictly the half it did
 // not have:
 //
-//   ALUMNI  — where members went after graduating. club.ts has no equivalent; it
-//             tracks the current club and the selections it produced, and says
+//   ALUMNI  — where members went after graduating. Nothing else tracks it; the club
+//             records the current team and the selections it produced, and says
 //             nothing about what happens to somebody two years later. That is the
 //             single most persuasive thing on the site for a parent, and it was
 //             about to be lost in the merge.
@@ -14,10 +14,12 @@
 //   ORGS    — the organisations the club has a relationship with, and what kind.
 //             Rendered as the representation wall.
 //
-// NOT HERE, and deliberately: the core team (club.ts TEAM_OFFICERS / TEAM_LEADS /
-// TEAM_SHADOWS, which carries the shadow structure this file's CORE_TEAM did not)
-// and the achievers (club.ts SELECTIONS, which carries the real GSoC cohort and
-// runs to twenty-five). Import those from club.ts.
+// NOT HERE, and deliberately: the core team (TEAM_OFFICERS / TEAM_LEADS /
+// TEAM_SHADOWS in content/team.ts, which carries the shadow structure this file's
+// CORE_TEAM did not)
+// and the achievers (SELECTIONS in content/selections.ts, which carries the real
+// GSoC cohort and
+// runs to twenty-five). Import those from their own modules.
 //
 // THE RULE FOR EVERY FILE IN THIS DIRECTORY still applies: if you cannot open a
 // URL that proves it, it does not go in. `consented` on anything naming a real
@@ -144,21 +146,21 @@ export const RELATION_LABEL: Record<Org["relation"], string> = {
 };
 
 // ---------------------------------------------------------------------------
-// DERIVED COUNTS, spanning this file and club.ts.
+// DERIVED COUNTS, spanning this file, content/team.ts and content/selections.ts.
 //
-// They live here rather than in club.ts because they are the only figures that
-// need BOTH rosters — club.ts owns the current team and the selections, this file
+// They live here rather than beside either roster because they are the only figures
+// that need BOTH — those modules own the current team and the selections, this file
 // owns the alumni, and a member count that ignores either is wrong. Importing
-// club.ts from here is safe in the direction it runs: club.ts imports nothing.
+// them from here is safe in the direction it runs: neither imports this file.
 
+import { type Programme } from "@/content/programmes";
+import { publishedSelections } from "@/content/selections";
 import {
-  TEAM_OFFICERS,
-  TEAM_LEADS,
-  TEAM_SHADOWS,
   TEAM_CONTENT,
-  publishedSelections,
-  type Programme,
-} from "@/content/club";
+  TEAM_LEADS,
+  TEAM_OFFICERS,
+  TEAM_SHADOWS,
+} from "@/content/team";
 
 /**
  * How many people this club can actually name, deduplicated.
@@ -196,8 +198,8 @@ export function memberCount(extraNames: string[] = []): number {
 /**
  * Programme counts, derived so a headline can never drift from the list beneath it.
  *
- * Reads club.ts's SELECTIONS rather than a list of its own. Both halves of the
- * merge that produced this site had an achievements array; club.ts's is the one
+ * Reads SELECTIONS rather than a list of its own. Both halves of the
+ * merge that produced this site had an achievements array; that one is the one
  * that carries the real GSoC cohort and runs to twenty-five, so this is a view
  * over that rather than a second copy to keep in step.
  */
@@ -213,7 +215,7 @@ export function achieverStats() {
     programmes: [...byProgramme.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([programme, count]) => ({ programme, count })),
-    // Same guard as club.ts selectionStats: a selection whose org has not come in
+    // Same guard as selectionStats: a selection whose org has not come in
     // yet is not an organisation, and `new Set` would happily count `undefined` as
     // one.
     orgs: new Set(live.map((s) => s.org).filter(Boolean)).size,
@@ -223,7 +225,7 @@ export function achieverStats() {
 /**
  * The club's own selections into a given programme.
  *
- * Reads club.ts's SELECTIONS for the same reason achieverStats does — one list of
+ * Reads SELECTIONS for the same reason achieverStats does — one list of
  * selections, viewed from several angles, rather than several lists to keep in
  * step. Used by the programmes page to answer "has anybody here actually done
  * this", which is the question that separates a list of opportunities from a

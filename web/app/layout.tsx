@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 // TWO faces, where there were four. Both self-hosted at build time by next/font,
@@ -79,6 +79,15 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+// The CherryPick wordmark, and nothing else. One heavy cut of a soft serif, to match
+// the logo artwork; see components/Logo.tsx.
+const brand = Fraunces({
+  subsets: ["latin"],
+  weight: ["800"],
+  variable: "--font-brand",
+  display: "swap",
+});
+
 import { AuthProvider } from "@/lib/auth";
 
 const SITE_URL =
@@ -113,7 +122,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+      suppressHydrationWarning
+      className={`${sans.variable} ${display.variable} ${mono.variable} ${brand.variable}`}
     >
       <body>
         {/* Anti-flash for the theme toggle.

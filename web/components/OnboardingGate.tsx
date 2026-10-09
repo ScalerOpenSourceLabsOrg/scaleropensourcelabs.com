@@ -49,7 +49,7 @@ function Body({ user }: { user: User }) {
       // rather than pretending there is no profile.
       console.error("[osc] could not read profile", e);
       setProfile(null);
-      setLoadError("We could not load your profile. Reload the page, or email us.");
+      setLoadError("Couldn't load your profile. Reload, or email us.");
     }
   }, []);
 
@@ -70,7 +70,7 @@ function Body({ user }: { user: User }) {
       <GateCard busy>
         <Steps at={2} />
         <p className="mt-6 text-body text-haze">
-          {done ? "You have already done this — taking you to your dashboard…" : "Loading your details…"}
+          {done ? "All done — off to your dashboard…" : "Loading your details…"}
         </p>
       </GateCard>
     );
@@ -93,8 +93,8 @@ function Body({ user }: { user: User }) {
           one sentence the page above cannot say: what happens to the answers. */}
       <p className="mt-6 text-body text-haze">
         {editing
-          ? "Change anything and save. Your address stays as it is on your college account."
-          : "Your batch and branch come from your college address, so this is everything we cannot work out on our own."}
+          ? "Change anything, then save."
+          : "We got your batch and branch from your email. Just these left."}
       </p>
 
       {loadError && (

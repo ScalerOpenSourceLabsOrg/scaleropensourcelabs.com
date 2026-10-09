@@ -449,7 +449,7 @@ export default function AdminMentorship({
           <p className="measure mt-3 text-sm leading-relaxed text-haze">
             {stats.total === 0
               ? "Nobody has enrolled yet."
-              : `${stats.total} student${stats.total === 1 ? "" : "s"} enrolled. The counts and charts on this page did not need any of their records; the list does, so it loads a page at a time.`}
+              : `${stats.total} student${stats.total === 1 ? "" : "s"} enrolled. The list loads a page at a time.`}
           </p>
           {stats.total > 0 && (
             <button
@@ -478,7 +478,7 @@ export default function AdminMentorship({
           rows={stats.totalDemand}
           total={stats.total}
           empty="Nobody has picked a mentor yet."
-          footnote="A mentor who is nobody's first choice and everybody's second is doing more work than the chart beside this one suggests."
+          footnote="Catches the mentor who's nobody's first choice but everybody's second."
         />
         <Bars
           title="Enrolled, by batch"
@@ -487,9 +487,9 @@ export default function AdminMentorship({
           empty={
             enrollments
               ? "Nobody has enrolled yet."
-              : "Needs the interest list — batch is read from each address rather than stored, so it cannot be counted in the database."
+              : "Load the interest list to see this."
           }
-          footnote="Read from each student's college address. 'Unknown' is an address that does not follow the usual pattern."
+          footnote="From college addresses. 'Unknown' means an unusual one."
         />
         <div className="card rounded-panel bg-raise p-6">
           <h3 className="label">Mentors nobody has picked</h3>
@@ -512,18 +512,14 @@ export default function AdminMentorship({
             </ul>
           )}
           <p className="mt-4 text-sm leading-relaxed text-dust">
-            Named rather than drawn as an empty bar, because a bar at zero is a row that
-            disappears. A hidden mentor with nobody is expected; a visible one is worth a
-            look at their description.
+            A hidden mentor here is expected; a visible one may need a better description.
           </p>
         </div>
       </div>
 
       <p className="text-sm leading-relaxed text-dust">
-        Percentages are of students enrolled, and a student holds two preferences — so the
-        two demand charts add up past 100%. Nothing on this page is an allocation:
-        preferences are what students asked for, and pairing them is still a decision
-        somebody makes.
+        Each student picks two, so demand adds up past 100%. These are requests, not
+        pairings — an organiser still decides.
       </p>
     </div>
   );

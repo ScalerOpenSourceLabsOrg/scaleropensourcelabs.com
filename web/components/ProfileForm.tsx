@@ -138,7 +138,7 @@ export default function ProfileForm({
       // closed-set value drifted between content/join.ts and firestore.rules.
       console.error("[osc] profile save failed", err);
       setMessage(
-        "That did not save. The fault is ours rather than yours — nothing was lost, so please try again, or email us:",
+        "That didn't save — our fault, nothing lost. Try again, or email us:",
       );
     }
   }
@@ -187,8 +187,7 @@ export default function ProfileForm({
               ))}
             </ul>
             <p className="mt-3 text-sm leading-relaxed text-dust">
-              Read from your college address, so we do not have to ask. Wrong? Tell an
-              organiser — nobody can edit it here, and nothing depends on it.
+              From your college email. Wrong? Tell an organiser.
             </p>
           </>
         ) : (
@@ -196,8 +195,7 @@ export default function ProfileForm({
           // here. Saying so is better than showing nothing, because the alternative is a
           // member wondering later why their batch is blank on the dashboard.
           <p className="mt-4 text-sm leading-relaxed text-dust">
-            We could not read a batch from this address, which is fine — nothing depends
-            on it.
+            Couldn&apos;t read a batch from this address — that&apos;s fine.
           </p>
         )}
       </div>
@@ -277,8 +275,7 @@ export default function ProfileForm({
           ))}
         </div>
         <p className="mt-2.5 text-sm leading-relaxed text-dust">
-          Build days and evening sessions get planned around which building people have to
-          walk back to. That is the only thing this is used for.
+          Only used to plan sessions around your walk home.
         </p>
       </fieldset>
 
@@ -291,7 +288,7 @@ export default function ProfileForm({
           <strong className="font-semibold text-haze">
             {PATHS.find((p) => p.id === effectivePath)?.name ?? effectivePath}
           </strong>
-          , so that is recorded as how you found us. You can change it later.
+          . Change it any time.
         </p>
       )}
 
@@ -324,9 +321,7 @@ export default function ProfileForm({
       {/* What happens to the data, next to the button rather than in a policy page
           nobody opens. It is the member's information, not ours. */}
       <p className="border-t border-seam pt-5 text-sm leading-relaxed text-dust">
-        Your details are visible to you and to the club organisers, and to nobody else.
-        Nothing here is published on this site — the names on it are only there because those
-        people were asked and said yes. You can edit or correct any of this at any time.
+        Only you and the organisers see this. Nothing gets published. Edit it any time.
       </p>
     </form>
   );

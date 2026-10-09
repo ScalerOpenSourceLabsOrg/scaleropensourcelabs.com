@@ -47,7 +47,7 @@ const nextConfig = {
   reactStrictMode: true,
 
   // The programmes route is spelled the way the rest of the site spells the word.
-  // club.ts is uniformly British — PROGRAMMES, PROGRAMME_NAME, "Programme and
+  // content/ is uniformly British — PROGRAMMES, PROGRAMME_NAME, "Programme and
   // organisation names are trademarks…" — and a nav item reading "Programmes" that
   // lands on /programs is the kind of small inconsistency a reader notices without
   // being able to name.

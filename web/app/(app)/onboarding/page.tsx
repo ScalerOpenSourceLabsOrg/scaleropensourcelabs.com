@@ -18,7 +18,7 @@ import OnboardingGate from "@/components/OnboardingGate";
 
 export const metadata: Metadata = {
   title: "Finish joining",
-  description: "Three questions, and you are a member of the Scaler Open Source Club.",
+  description: "Three questions, and you're in.",
   robots: { index: false, follow: false },
 };
 
@@ -42,9 +42,7 @@ export default function Onboarding() {
             Three questions.
           </h1>
           <p className="mt-4 text-body-lg text-haze">
-            You only do this once, and you can change any of it later. It is what the
-            organisers see when they are putting build-day pairs and programme cohorts
-            together.
+            Just once, and you can change it later. It helps us pair you up on build days.
           </p>
 
           {/* The gate reads the query string, which needs a Suspense boundary or

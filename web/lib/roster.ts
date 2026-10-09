@@ -6,7 +6,7 @@
 //   the public billing name + title + photo, which the /team page shows
 //
 // THEY ARE ONE ROW BECAUSE THEY WERE TWO LISTS AND THE TWO LISTS DRIFTED. The club kept
-// its team in `content/club.ts` (a commit and a deploy) and its access in `admins` (a
+// its team in `content/team.ts` (a commit and a deploy) and its access in `admins` (a
 // console edit), and nothing connected them — so the failure was silent in both
 // directions: somebody who left still had admin, or a new lead could not get in but
 // appeared on the site. A club whose team turns over yearly cannot maintain that.

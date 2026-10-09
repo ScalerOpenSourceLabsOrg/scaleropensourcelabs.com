@@ -112,11 +112,15 @@ stubFetch([
     }),
   ],
   ["is%3Aopen", json({ total_count: 2, items: [] })],
+  // The issues search carries no is: filter at all, which is what distinguishes it here
+  // as well as at GitHub — see the note in github.js on why state is not filtered.
+  ["type%3Aissue", json({ total_count: 5, items: [] })],
 ]);
 {
   const c = await fetchContributions("asha", "");
   eq("merged is the search total, not the page length", c.merged, 12);
   eq("open is counted separately", c.open, 2);
+  eq("issues opened are counted separately again", c.issues, 5);
   eq("repos counts DISTINCT repositories across the whole page", c.repos, 4);
   eq("the stored list is capped at RECENT", c.recent.length, 8);
   eq("not_found is absent for a real account", c.not_found, undefined);
@@ -128,6 +132,7 @@ stubFetch([
   ["/users/", json({ login: "newbie" })],
   ["is%3Amerged", json({ total_count: 0, items: [] })],
   ["is%3Aopen", json({ total_count: 0, items: [] })],
+  ["type%3Aissue", json({ total_count: 0, items: [] })],
 ]);
 {
   const c = await fetchContributions("newbie", "");
@@ -168,6 +173,7 @@ stubFetch([["/users/", json({}, 500)]]);
     ["/users/", json({}, 500)],
     ["is%3Amerged", json({ total_count: 1, items: [item(1)] })],
     ["is%3Aopen", json({ total_count: 0, items: [] })],
+    ["type%3Aissue", json({ total_count: 0, items: [] })],
   ]);
   const c = await fetchContributions("asha", "");
   eq("a 500 on the user lookup does not flag a typo", c.not_found, undefined);

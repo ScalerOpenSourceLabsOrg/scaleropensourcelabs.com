@@ -8,7 +8,7 @@
 //
 // IT IS BUILT FROM CONTENT, NOT FROM FIRESTORE. The route they picked and the programmes
 // they ticked are already on the profile, and everything this panel says about them
-// already exists in content/join.ts and content/club.ts. So there is nothing to fetch,
+// already exists in content/join.ts and content/site.ts. So there is nothing to fetch,
 // nothing to keep in sync, and no new collection — the personalisation is a lookup.
 //
 // WHY THE FIRST LINE NAMES THEIR ROUTE. "Here are some links" is a panel every member
@@ -33,19 +33,19 @@ type Door = { label: string; hint: string; href: string; external?: boolean };
 const COMMON: Door[] = [
   {
     label: "Find a good first issue",
-    hint: "Open, unclaimed, and sized for a first attempt.",
+    hint: "Unclaimed and beginner-sized.",
     href: LINKS.issues,
     external: true,
   },
   {
     label: "Read the contributing guide",
-    hint: "How a patch gets from your laptop to merged.",
+    hint: "From your laptop to merged.",
     href: LINKS.contributing,
     external: true,
   },
   {
     label: "See what the club is working on",
-    hint: "Every project members have landed work in.",
+    hint: "Everywhere members have shipped.",
     href: "/projects",
   },
 ];
@@ -73,7 +73,7 @@ export default function NextUp({ profile }: { profile: Profile }) {
       ? [
           {
             label: "Deadlines for the programmes you picked",
-            hint: "When applications open, and what they want to see by then.",
+            hint: "When they open, and what to have ready.",
             href: "/programmes",
           } as Door,
         ]
@@ -84,38 +84,21 @@ export default function NextUp({ profile }: { profile: Profile }) {
   return (
     <Panel icon="compass" title="Where to go next" tone="accent">
       {/* THE REMEMBERED BIT, and the reason this panel is the one filled surface on the
-          page. "Here are some links" is a panel every member scrolls past; "you said
-          fast-track, so here is the fast-track door" is the club having remembered, and
-          that is worth the only block of colour on the screen.
-
-          Both clauses are conditional because both fields can be missing on an older
-          profile, and a sentence with a blank in it is worse than a shorter sentence. */}
-      <p className="text-body leading-relaxed">
-        {path ? (
-          <>
-            You came in through{" "}
-            <span className="font-semibold">{path.name.toLowerCase()}</span>
-            {picked.length ? ", and you have your eye on " : ". "}
-          </>
-        ) : null}
-        {picked.length ? (
-          <>
-            <span className="font-semibold">
-              {picked.slice(0, 2).join(", ")}
-              {picked.length > 2 ? ` and ${picked.length - 2} more` : ""}
-            </span>
-            . Here is what moves that along.
-          </>
-        ) : (
-          "Here is what to do with the week you have."
-        )}
-      </p>
+          page: it names the route they actually came in through. Conditional because the
+          field can be missing on an older profile, and a sentence with a blank in it is
+          worse than no sentence at all. */}
+      {path && (
+        <p className="text-body leading-relaxed">
+          You came in through{" "}
+          <span className="font-semibold">{path.name.toLowerCase()}</span>.
+        </p>
+      )}
 
       {/* BUTTONS ON THE PLATE, not the underlined list this panel used to carry. On a
           filled surface an underline is the only thing distinguishing a link from the
           sentence around it, and at this contrast that is not enough — the design makes
           each one a pressable object instead, which is also what they are. */}
-      <ul className="mt-5 space-y-2.5">
+      <ul className={`space-y-2.5 ${path ? "mt-5" : ""}`}>
         {doors.map((d) => {
           const inner = (
             <>
@@ -148,11 +131,11 @@ export default function NextUp({ profile }: { profile: Profile }) {
       </ul>
 
       <p className="mt-5 text-sm opacity-90">
-        Stuck on any of it?{" "}
+        Stuck?{" "}
         <a href={`mailto:${LINKS.email}`} className="tap underline underline-offset-2">
           Email us
-        </a>{" "}
-        — that is what we are for.
+        </a>
+        .
       </p>
     </Panel>
   );

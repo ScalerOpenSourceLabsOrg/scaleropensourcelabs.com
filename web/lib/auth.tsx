@@ -46,6 +46,7 @@ import {
   isAllowedEmail,
   isConfigured,
 } from "@/lib/firebase";
+import { readMyFloorMentor, type FloorMentor } from "@/lib/floor";
 
 type AuthState = {
   /** null once we know nobody is signed in; undefined while we do not know yet. The
@@ -78,6 +79,10 @@ type AuthState = {
    *  Panels wait for a definite answer rather than guessing — see visibleTo() in
    *  lib/audience.ts, which refuses to decide while this is undefined. */
   isClubMember: boolean | undefined;
+  /** This person's floor_mentors row if it is active — they may work the help queue at
+   *  Build Days. null when they are not one; undefined while unknown. A convenience like
+   *  the others: isFloorMentor() in firestore.rules is what actually lets them in. */
+  floorMentor: FloorMentor | null | undefined;
   /** Firebase is not set up at all — no .env.local. The UI says so rather than
    *  offering a button that cannot work. */
   configured: boolean;
@@ -99,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
   const [isOwner, setIsOwner] = useState<boolean | undefined>(undefined);
   const [isClubMember, setIsClubMember] = useState<boolean | undefined>(undefined);
+  const [floorMentor, setFloorMentor] = useState<FloorMentor | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   /** The off-domain address somebody just tried, so the card can offer "use a different
@@ -251,12 +257,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  // Floor-mentor status, from the caller's OWN floor_mentors row — a third document, read
+  // separately for the reason the membership read above gives. Same active default as the
+  // admin row: absent means active.
+  useEffect(() => {
+    let alive = true;
+    if (!user) {
+      setFloorMentor(user === null ? null : undefined);
+      return;
+    }
+    (async () => {
+      try {
+        const row = user.email ? await readMyFloorMentor(user.email) : null;
+        if (alive) setFloorMentor(row && row.active !== false ? row : null);
+      } catch {
+        if (alive) setFloorMentor(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
   const value = useMemo<AuthState>(
     () => ({
       user,
       isAdmin,
       isOwner,
       isClubMember,
+      floorMentor,
       configured,
       busy,
       error,
@@ -368,7 +397,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       },
     }),
-    [user, isAdmin, isOwner, isClubMember, configured, busy, error, wrongAccount],
+    [user, isAdmin, isOwner, isClubMember, floorMentor, configured, busy, error, wrongAccount],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

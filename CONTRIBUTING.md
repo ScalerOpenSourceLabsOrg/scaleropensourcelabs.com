@@ -22,21 +22,32 @@ beyond those commands, that is a bug — please open an issue.
 ## The files that matter
 
 Almost every contribution is an edit to one file under **`web/content/`**. They hold
-all the site's content as typed arrays, one module per page, so you do not need to
+all the site's content as typed arrays, one module per topic, so you do not need to
 touch a React component to add a person, a project, or an answer.
 
 | File | What lives there | Page |
 | --- | --- | --- |
 | `site.ts` | Links, the page list, the footer's institutional copy | every page |
-| `essence.ts` | What open source is, career impact, the ICPC comparison, member stories | Essence |
+| `essence.ts` | What open source is, career impact, the glossary, member stories | Home |
+| `positioning.ts` | What a member walks away with, the ICPC comparison, the trade-offs | Home |
+| `showcase.ts` | Verified upstream contributions, and the headline counts derived from them | Home, Projects |
 | `projects.ts` | Build-day projects, club repos, upstream contributions | Projects |
-| `programs.ts` | The seven programmes, tiers, the reverse clock | Programs |
-| `people.ts` | Core team, alumni, achievers, organisations | Hall of Fame |
-| `join.ts` | The four entry paths, what we look for, culture, FAQ, form options | How to Join |
+| `tracks.ts` | The three tracks, and the four steps of a first contribution | Programmes, How to Join |
+| `programmes.ts` | The seven programmes, tiers, their names and colours, the deadline calendar | Programmes |
+| `selections.ts` | Who got selected into which programme, and by whom | Hall of Fame |
+| `people.ts` | Alumni, partner organisations, and the counts that span both rosters | Hall of Fame |
+| `team.ts` | Officers, leads, shadows — the org chart | Team |
+| `mentors.ts` | The published mentor bench | Team |
+| `events.ts` | Internal sessions and external events | Events |
+| `how-to-join.ts` | What we look for, how the club runs, who it is not for, the FAQ | How to Join |
+| `join.ts` | The named entry paths, the mentor bench, the join form's options | Join, Onboarding |
+| `lookup.ts` | Looks one person up by name across the lists above. No content of its own. | — |
 
-This used to be a single `club.ts`. It was split when the site became five pages,
-because one 800-line file holding five pages' content meant every content PR touched
-it and every one of them conflicted.
+This used to be a single `club.ts`. It was split because one file holding every
+page's content meant every content PR touched it and every one of them conflicted.
+Each module above owns one topic and is the only place that topic is written down,
+so two of them can never disagree — see `lookup.ts` for how a section borrows a fact
+recorded somewhere else instead of restating it.
 
 > **Editing the join form's options?** `join.ts` holds the four paths, the two hostels
 > and the programme list — and `firestore.rules` at the repo root keeps a **second copy**
@@ -50,17 +61,18 @@ it and every one of them conflicted.
 > FIREBASE.md before changing it.
 
 ```ts
-// content/people.ts
-export const ACHIEVERS: Achiever[] = [
+// content/selections.ts
+export const SELECTIONS: Selection[] = [
   {
     name: "Full Name",
-    achievement: { kind: "programme", programme: "GSOC" },  // or { kind: "hackathon", event: "..." }
-    year: "2026",
-    org: "The organisation that selected them",
-    work: "One specific sentence on what they actually built.",
+    programme: "GSOC",              // a key of PROGRAMME_NAME in programmes.ts
+    year: "2026",                   // the programme edition, not their year of study
+    studyYear: "3rd year",          // optional
+    org: "The organisation that selected them", // optional until somebody confirms it
+    work: "One specific sentence on what they actually built.", // optional
     photo: "/people/full-name.jpg", // optional
     github: "their-login",          // optional
-    url: "https://link-that-proves-it",
+    url: "https://link-that-proves-it",         // optional
     consented: true,                // REQUIRED — see below
   },
 ];

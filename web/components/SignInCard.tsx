@@ -127,9 +127,8 @@ export default function SignInCard() {
             design one. */}
         <h1 className="text-display-md font-semibold">Sign-in is not set up here.</h1>
         <p className="measure mt-4 text-body text-haze">
-          This deployment has no Firebase configuration, so there is nothing for this page
-          to show. If you are running the site locally, see <code>web/.env.example</code>.
-          If you are seeing this on the live site, that is a bug — please tell us.
+          Running locally? See <code>web/.env.example</code>. Seeing this live? That&apos;s
+          a bug — tell us.
         </p>
         {/* NO "YOU CAN STILL APPLY" LINE, AND THAT IS A CORRECTION RATHER THAN AN OMISSION.
             This card used to say the application form needed no account, which was true
@@ -146,14 +145,12 @@ export default function SignInCard() {
 
   return (
     <div className="card rounded-panel bg-raise p-8 sm:p-10">
-      <p className="chip">Members only</p>
-
       {/* h1, NOT h2. This card IS the whole page for a signed-out reader on /dashboard —
           the route's app shell carries no banner heading of its own, so without this the
           document has no h1 at all and a screen reader gets a page with no title. The
           signed-in half of the same route puts its h1 on the greeting, for the same
           reason: exactly one, on whatever the reader actually came for. */}
-      <h1 className="mt-4 font-display text-display-md font-bold tracking-tight">
+      <h1 className="font-display text-display-md font-bold tracking-tight">
         Sign in with your college account
       </h1>
       <p className="measure mt-3 text-body text-haze">
@@ -214,9 +211,8 @@ export default function SignInCard() {
           {wrongAccount && (
             <p className="mt-2 text-sm leading-relaxed text-dust">
               You signed in as{" "}
-              <span className="font-mono text-haze">{wrongAccount}</span>. Press the button
-              again and pick your college account from the list — Google will ask which one
-              to use.
+              <span className="font-mono text-haze">{wrongAccount}</span>. Try again and
+              pick your college account.
             </p>
           )}
         </div>
@@ -259,14 +255,11 @@ export default function SignInCard() {
                 classes, not the tag, so nothing on screen changes. */}
             <h2 className="font-semibold text-ink">Who can sign in</h2>
             <p className="mt-2 text-sm leading-relaxed text-haze">
-              Students with an <strong className="text-ink">@{DOMAIN}</strong> address. No
-              other address can register, and that is the whole check — no fee, no
-              interview, no prior experience.
+              Students with an <strong className="text-ink">@{DOMAIN}</strong> address.
+              That&apos;s the only check — no fee, no interview, no experience needed.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-haze">
-              We use Google rather than a password so nobody can register an address they
-              do not own, and so you have no password to invent or lose. We never see your
-              password.
+              Google, not a password — nothing to forget, and we never see it.
             </p>
             {/* THE "YOU CAN APPLY WITHOUT AN ACCOUNT" LINE IS GONE, and its absence is the
                 honest state rather than a loss. It was added when this card stood in front
@@ -277,10 +270,6 @@ export default function SignInCard() {
           </div>
         </div>
       </div>
-
-      {/* NO DEV LOGIN ON THIS CARD. It is rendered by the app shell instead, which wraps
-          every route this card appears on — including this signed-out state — so putting
-          one here too would show two of them. See components/dev/DevLoginSlot.tsx. */}
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK. A closed door invites a bell, but the door is
           the point here: an @sst.scaler.com address IS the membership test, so somebody

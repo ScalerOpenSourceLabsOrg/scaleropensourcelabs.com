@@ -165,17 +165,17 @@ export default function FormBuilder() {
         editing
           ? "Updated."
           : audience === "members"
-            ? "Posted. Club members see it on their dashboard now."
+            ? "Posted — live for club members."
             : audience === "students"
-              ? "Posted. Students who are not members see it; members will not."
-              : "Posted. Everyone who signs in sees it on their dashboard now.",
+              ? "Posted — non-members only."
+              : "Posted — live for everyone.",
       );
       reset();
       await load();
     } catch (e) {
       console.error("[osc] could not save the form", e);
       setError(
-        "Firestore refused that. Either the rules are not deployed, or your address is not in the admins collection.",
+        "Firestore refused that — rules not deployed, or you're not in admins.",
       );
     } finally {
       setBusy(false);
@@ -260,8 +260,7 @@ export default function FormBuilder() {
         {editing ? "Editing a form." : "Ask the club something."}
       </h3>
       <p className="measure mt-3 text-body text-haze">
-        A sign-up sheet, or a poll — the only difference is whether everyone sees the
-        counts afterwards.
+        A sign-up sheet or a poll — polls show everyone the counts.
       </p>
 
       <div className="mt-6 space-y-4">

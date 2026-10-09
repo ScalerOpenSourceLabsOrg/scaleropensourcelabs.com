@@ -5,7 +5,8 @@ import Mentors from "@/components/Mentors";
 import NextAction from "@/components/NextAction";
 import Note from "@/components/fx/Note";
 import { JOIN_HREF } from "@/content/site";
-import { TEAM_SHADOWS, publishedMentors, teamSize } from "@/content/club";
+import { publishedMentors } from "@/content/mentors";
+import { shadowCount, teamSize } from "@/content/team";
 
 // THE TEAM PAGE. Who runs the club, and who teaches in it.
 //
@@ -25,7 +26,7 @@ import { TEAM_SHADOWS, publishedMentors, teamSize } from "@/content/club";
 export const metadata: Metadata = {
   title: "Team",
   description:
-    "The students who run the Scaler Open Source Club, the shadows training to take over, and the mentors who have been through these programmes.",
+    "The students who run the club, the shadows learning the ropes, and the mentors who've been there.",
 };
 
 export default function TeamPage() {
@@ -40,9 +41,7 @@ export default function TeamPage() {
           trail="Which is why the handover is built in."
         />
         <p className="measure mt-4 text-body-lg text-haze">
-          Everyone on this page graduates. A club that depends on the people
-          currently running it lasts exactly as long as they do, so every role has
-          somebody shadowing it from the year below.
+          Everyone here graduates, so every role has a shadow from the year below.
         </p>
       </header>
 
@@ -86,7 +85,7 @@ export default function TeamPage() {
               standfirst keeps who-to-ask; it says it once and says it better.
 
               So the margin now answers the question the chart CANNOT: not who
-              holds which office, but why eleven students bother. It is the one
+              holds which office, but why that many students bother. It is the one
               warm sentence beside a deliberately formal org chart, which is the
               contrast the note format is for — and it is second-person, where
               everything else in this section is third.
@@ -96,27 +95,27 @@ export default function TeamPage() {
               hand-typed number here goes stale the first time somebody joins
               it.
 
-              anchor 49: the headline's second clause ends at 737px, so 784 sits
-              47px off it. Unchanged, and it stays valid only because the Duo
-              above was left exactly as it was — this number is derived from that
-              headline's line break, so re-word the heading and this needs
-              re-measuring, not adjusting by eye. */}
-          <Note
-            place="flow"
-            tone="warm"
-            fold
-            title={`${teamSize()} brains, one group chat.`}
-            body="All of them trying to make your four years more fun."
-            tilt={2.5}
-            anchor={49}
-            className="top-12"
-          />
-          <p className="chip">Who runs it</p>
-          <Duo
-            className="mt-4 max-w-4xl text-display-lg"
-            lead={`${teamSize()} people run this club.`}
-            trail={`${TEAM_SHADOWS.length} are shadows, training to take over.`}
-          />
+              In flow beside the heading, not at a measured anchor — see the
+              placement note in Note.tsx. */}
+          <div className="lg:flex lg:items-start lg:gap-10">
+            <div className="min-w-0 flex-1">
+              <p className="chip">Who runs it</p>
+              <Duo
+                className="mt-4 max-w-4xl text-display-lg"
+                lead={`${teamSize()} people run this club.`}
+                trail={`${shadowCount()} are shadows, training to take over.`}
+              />
+            </div>
+            <Note
+              place="flow"
+              tone="warm"
+              fold
+              title={`${teamSize()} brains, one group chat.`}
+              body="All of them trying to make your four years more fun."
+              tilt={2.5}
+              className="mt-2"
+            />
+          </div>
           <p className="measure mt-4 text-body-lg text-haze">
             This page exists to answer one
             question: <span className="mark">who to ask</span>. 
@@ -134,7 +133,7 @@ export default function TeamPage() {
             over nothing, which reads worse than the box did.
 
             So the gate lives here rather than in the component, because the copy
-            it has to suppress lives here too. Add a mentor to content/club.ts and
+            it has to suppress lives here too. Add a mentor to content/mentors.ts and
             the section returns in full, unchanged — nothing about it was deleted.
 
             aria-label because this section has no nav link — "Team" took that
@@ -150,38 +149,32 @@ export default function TeamPage() {
                 actually matters to somebody deciding whether the advice will be
                 current. Void: 240px tall, 320px clear.
 
-                anchor 59, the largest on the page, because this headline's trail
-                is the longest — its ink reaches 900px from the container's left
-                edge. 44px of gap, same as the rest; the number differs because
-                the sentence does. */}
-            <Note
-              place="flow"
-              tone="yellow"
-              fixing="pin"
-              paper="ruled"
-              title="Two years ahead, not twenty."
-              /* SHORT because the title is long. This void is 240px and a
-                 four-line title already spends 90 of it; the first draft's body
-                 ran to five lines and put the note 37px through the paragraph
-                 below. The band has no give — the copy has to. */
-              body="All of them went through one themselves."
-              tilt={-2.5}
-              anchor={59}
-              className="top-2"
-            />
-            <p className="chip">Who reads your code</p>
-            <Duo
-              className="mt-4 max-w-4xl text-display-lg"
-              lead="Not professors."
-              trail="People who did this recently, under the same constraints."
-            />
+                In flow beside the heading, not at a measured anchor — see the
+                placement note in Note.tsx. */}
+            <div className="lg:flex lg:items-start lg:gap-10">
+              <div className="min-w-0 flex-1">
+                <p className="chip">Who reads your code</p>
+                <Duo
+                  className="mt-4 max-w-4xl text-display-lg"
+                  lead="Not professors."
+                  trail="People who did this recently, under the same constraints."
+                />
+              </div>
+              <Note
+                place="flow"
+                tone="yellow"
+                fixing="pin"
+                paper="ruled"
+                title="Two years ahead, not twenty."
+                body="All of them went through one themselves."
+                tilt={-2.5}
+                className="mt-2"
+              />
+            </div>
             <p className="measure mt-4 text-body-lg text-haze">
-              Every mentor here has been through one of these programmes
-              themselves. What they offer is narrow and recent: they wrote the
-              proposal, sat through the review comments and landed the patch,
-              from this campus, within the last couple of years. Each entry says
-              what they shipped, links the public record, and names the few
-              things they are genuinely useful for.
+              Each one wrote the proposal, survived the review and landed the patch —
+              from this campus, recently. Here&apos;s what they shipped and what to
+              ask them about.
             </p>
             <Mentors />
           </section>
@@ -191,7 +184,7 @@ export default function TeamPage() {
         eyebrow="Come and meet them"
         lead="These are the people in the room."
         trail="The room is open to anyone."
-        body="No interview, no selection at the door, no prior experience. Turn up to a working session and somebody on this page will find you something to start on."
+        body="No interview, no experience needed. Turn up and someone here will find you something to start on."
         href={JOIN_HREF}
         cta="Join the club"
       />

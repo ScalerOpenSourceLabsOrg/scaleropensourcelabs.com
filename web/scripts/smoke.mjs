@@ -98,7 +98,8 @@ for (const route of ROUTES) {
     ok(`${label} no Join button on the app shell`, !state.joinPresent);
   } else {
     ok(`${label} Join button visible at >=44px`, state.joinVisible);
-    // Six pages mark themselves; /join and /privacy mark nothing. See assert-site.mjs.
+    // The five routes in the nav strip mark themselves; /join, /guide and
+    // /privacy mark nothing. See assert-site.mjs.
     const wantCurrent = route.inNav ? 1 : 0;
     ok(
       `${label} nav current marks == ${wantCurrent}`,
@@ -115,7 +116,7 @@ for (const route of ROUTES) {
 // ---------------------------------------------------------------------------
 // Controls, on a page that has sections to outline.
 
-await pg.goto(BASE + "/how-to-join", { waitUntil: "networkidle" });
+await pg.goto(BASE + "/join", { waitUntil: "networkidle" });
 await assertOurSite(pg);
 await pg.waitForTimeout(400);
 

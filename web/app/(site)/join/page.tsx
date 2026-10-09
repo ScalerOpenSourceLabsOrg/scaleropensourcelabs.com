@@ -2,18 +2,62 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import JoinGate from "@/components/JoinGate";
 import Duo from "@/components/Duo";
+import Doodle from "@/components/Doodle";
+import PathCard from "@/components/PathCard";
+import ProgramMentors from "@/components/ProgramMentors";
+import Faq from "@/components/Faq";
 import Note from "@/components/fx/Note";
+import { ENTRY_PATHS, MENTORED_PATH_ID, PATHS } from "@/content/join";
+import { FAQ, NOT_FOR } from "@/content/how-to-join";
 
-// THE APPLICATION FORM. One route, one job.
+// JOINING. The door, the two ways through it, and the case for walking in.
+//
+// THIS ROUTE ABSORBED THE FRONT HALF OF /how-to-join, and the reason is the nav:
+// the bar used to carry "How to Join" as a route AND "Join" as a filled button
+// three inches to its right, two controls with the same word on them dividing one
+// question between two pages, with nothing on screen saying which half was where.
+// The button is the one every reader presses, so the button's destination is where
+// the answer had to be. See the note over PAGES in content/site.ts.
+//
+// WHAT IT NOW HOLDS, in the order a reader meets it:
+//
+//   #apply      what joining is, and the door itself
+//   #ways-in    the two ways in — build days and hackathons
+//   #why-join   why bother at all: the programme track, and the mentors on it
+//   #who-not-for four honest reasons to walk away
+//   #faq        what people actually ask
+//   (closing)   the two futures
+//
+// THE LAST TWO CAME FROM /how-to-join, WHICH IS GONE. That page split one question
+// ("how do I join") across two routes with the same word in their names, and
+// half of what it held was a second telling of the pull-request loop the home
+// page and /programmes also told. The loop and the commands went to /guide; the
+// part a person deciding whether to sign in actually needs — who this is not for,
+// and the FAQ — came here. /how-to-join redirects to this page.
+//
+// TWO WAYS IN AND NOT FIVE. content/join.ts still holds five paths and they are
+// all real; ENTRY_PATHS names the two this page offers, for the reason written
+// there. A stranger choosing between five doors is a stranger who closes the tab,
+// and the other three are routes people move ONTO rather than arrive by — the
+// onboarding form still offers every one of them.
+//
+// WHY #why-join IS LAST RATHER THAN FIRST. It is the strongest material on the
+// page — six named seniors, six organisations, every one selected into a paid
+// programme — and the instinct is to lead with it. It is also the most
+// intimidating material on the page, and the reader this route is written for is
+// the one who is not sure they are good enough to be in the room. Leading with a
+// wall of GSoC selections answers a question they have not asked yet and confirms
+// the fear they arrived with. So: the door first, the low-stakes Saturday second,
+// and the ambitious thing only once "you do not need to be good yet" has been said
+// and demonstrated.
 //
 // It carries no NextAction, and it is the only route that does not: the form IS
-// the next action, and a closing "here is what to do next" band underneath a
-// half-filled form is an invitation to abandon it.
+// the next action, and a closing "here is what to do next" band pointing somewhere
+// else is an invitation to abandon it.
 //
-// It does now close on a band, but the distinction above is what that band is
-// built to respect — it contains no link, so it argues for the form rather than
-// offering somewhere else to be. Anything added down there has to clear the same
-// bar: no exits under an unfinished form.
+// It does close on a band, and that band is built to respect the same rule — the
+// only link in it goes back UP to the form. Anything added down there has to clear
+// the same bar: no exits under an unfinished form.
 //
 // It is also absent from PAGES, so it appears in neither the nav strip nor beside
 // the other routes in the footer. The nav carries it as a filled button at the
@@ -29,8 +73,16 @@ import Note from "@/components/fx/Note";
 export const metadata: Metadata = {
   title: "Join",
   description:
-    "Join the Scaler Open Source Club. Sign in with your college account — no fee, no interview, no prior experience needed.",
+    "Join the Scaler Open Source Club: build days, hackathons and a mentored programme track. Free, no interview, no experience needed.",
 };
+
+/* The programme track, pulled out by id rather than by position. It is the one
+   path this page renders outside the two front-door cards, and MENTORED_PATH_ID is
+   the same constant ProgramMentors is attached by — so the bench and the path it
+   sits under cannot come apart. Missing means the section does not render, which
+   is the honest failure: a "why join" band with the argument removed is worse than
+   no band. */
+const TRACK = PATHS.find((p) => p.id === MENTORED_PATH_ID);
 
 export default function Join() {
   return (
@@ -149,8 +201,8 @@ export default function Join() {
                   because it still reads fine and is simply no longer about anything.
                   Named and linked instead. */}
               <p className="measure mt-4 text-body-lg text-haze">
-                Most people arrive having never opened a pull request. That is the
-                normal starting point, not a disqualification — every name in the{" "}
+                Most people arrive having never opened a pull request. So did everyone
+                in the{" "}
                 <Link href="/hall-of-fame" className="link-u text-accent">
                   hall of fame
                 </Link>{" "}
@@ -194,13 +246,162 @@ export default function Join() {
           </div>
         </section>
 
+        {/* ---- The two ways in -----------------------------------------------
+            Directly under the door, because "which of these am I" is the question
+            the sign-in card raises and does not answer. Both are beginner paths and
+            both are a day rather than a commitment — the point of putting them here
+            is that neither one asks the reader to already be anything.
+
+            NUMBERED, which a two-item list usually should not be. It is not a
+            ranking and nothing is sequential about them; the numerals are here
+            because the section above promises "two ways", and a numbered pair is
+            the cheapest way for a reader scrolling past to confirm they have seen
+            both rather than wondering whether a third scrolled by. */}
+        <section
+          id="ways-in"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
+          aria-label="The two ways in"
+          data-reveal-group
+        >
+          <p className="flex items-center gap-2">
+            <span className="chip">Where people actually start</span>
+            <Doodle kind="squiggle" className="h-5 w-8 text-accent" />
+          </p>
+          <Duo
+            className="mt-4 max-w-4xl text-display-lg"
+            lead="There are two ways in."
+            trail="Neither of them is a commitment."
+          />
+          <p className="measure mt-4 text-body-lg text-haze">
+            No track to pick. Choose a day and show up with nothing ready —{" "}
+            <span className="mark">the setup is the part that defeats people</span>, so we do it with you.
+          </p>
+
+          <div className="mt-9 space-y-4" data-reveal-group>
+            {ENTRY_PATHS.map((p, i) => (
+              <PathCard
+                key={p.id}
+                path={p}
+                step={String(i + 1).padStart(2, "0")}
+              />
+            ))}
+          </div>
+
+          {/* The three paths this page does not offer. One line, not a fourth and
+              fifth card: they are real routes and somebody arriving with merged pull
+              requests deserves to know the club has somewhere to put them, but a
+              stranger deciding whether to sign in should not have to rule them out
+              first. The onboarding form lists all five. */}
+          <p className="mt-8 max-w-3xl text-body text-haze">
+            Already have merged PRs? Say so after you sign in and skip straight to a
+            project team.
+          </p>
+
+          {/* Points DOWN the page, not off it: the honest part and the FAQ live
+              here now (see the head of this file), so this is not an exit from
+              the form. */}
+          <p className="mt-3 max-w-3xl">
+            <Link
+              href="#who-not-for"
+              className="tap link-u inline-block font-mono text-xs text-accent transition hover:brightness-125"
+            >
+              The honest bit: who this isn&apos;t for, plus FAQs ↓
+            </Link>
+          </p>
+        </section>
+
+        {/* ---- Why bother ----------------------------------------------------
+            The case, made last and made with people rather than with process. See
+            the note at the head of this file for why it is down here and not at the
+            top, and ProgramMentors.tsx for why the bench is six faces rather than a
+            sentence.
+
+            IT RENDERS THE PROGRAMME TRACK IN FULL — the same card as the two above,
+            same fields, same layout — rather than a summary of it. Two reasons: a
+            reader who has just read two cards knows how to read a third, and a
+            summary is a second copy of content/join.ts's prose that would drift from
+            it the first time anybody edited either. */}
+        {TRACK && (
+          <section
+            id="why-join"
+            className="section relative pt-16 sm:pt-24"
+            aria-label="Why join"
+            data-reveal-group
+          >
+            <p className="chip">Why bother</p>
+            <Duo
+              className="mt-4 max-w-4xl text-display-lg"
+              lead="The thing worth joining for is decided months before you apply."
+              trail="Which is the whole reason to start in September."
+            />
+            <p className="measure mt-4 text-body-lg text-haze">
+              A build day is a good evening. This is what it&apos;s an evening{" "}
+              <em>towards</em>: GSoC, LFX and Outreachy — paid, competitive, and won
+              by people maintainers already know. Our track is run by people who got in.
+            </p>
+
+            <div className="mt-9">
+              <PathCard path={TRACK} cta="Sign in and say this is your aim">
+                <ProgramMentors />
+              </PathCard>
+            </div>
+          </section>
+        )}
+
+        {/* ---- Who this is not for -----------------------------------------
+            Four reasons to walk away, on the page whose job is recruitment. It is
+            the section that makes the rest credible: a club that claims to be for
+            everybody is making a claim nobody believes. */}
+        <section
+          id="who-not-for"
+          className="band section pt-10 pb-10 sm:pt-14 sm:pb-14"
+          data-reveal-group
+        >
+          <p className="chip">Be honest with yourself</p>
+          <Duo
+            className="mt-4 max-w-4xl text-display-lg"
+            lead="This is not for everyone."
+            trail="Four reasons to walk away now."
+          />
+          <ul className="mt-7 max-w-3xl space-y-4">
+            {NOT_FOR.map((n) => (
+              <li key={n} className="flex gap-4 border-t border-seam pt-6">
+                <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
+                <span className="text-body text-haze">{n}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-8 max-w-3xl text-body text-ink">
+            Still here? Then it&apos;s for you.
+          </p>
+        </section>
+
+        {/* ---- FAQ ---------------------------------------------------------- */}
+        <section id="faq" className="section pt-10 sm:pt-14" data-reveal-group>
+          <p className="chip">Questions</p>
+          <Duo
+            className="mt-4 max-w-4xl text-display-lg"
+            lead="The things people actually ask."
+          />
+          <Faq items={FAQ} />
+        </section>
+
         {/* ---- The two futures ---------------------------------------------
             The closing band, and the exception the comment at the top of this
             file now carries: it is not a NextAction. Every other route ends by
             handing you somewhere else to go, which under a half-filled form
-            would be an exit. This band has no link in it at all. It restates
-            the decision already on the screen and then stops, so the only
-            thing to do with it is scroll back up and finish.
+            would be an exit. This one restates the decision and then stops.
+
+            IT CARRIES EXACTLY ONE LINK NOW, AND IT POINTS BACKWARDS. The band
+            had none at all while the form was one scroll above it. It is three
+            sections above it since this route absorbed the ways in and the
+            programme track, and "scroll back up and finish" stopped being a
+            thing a reader does — it is a 4,000px drag past two arguments they
+            have already read. So the band ends with the way back to the door.
+            That is not an exit: it is the same action the whole page is for,
+            offered at the one place somebody has finished reading and has
+            nothing in front of them. A link to anywhere ELSE still does not
+            belong here.
 
             NOT INSIDE THE SIGN-IN CARD. It lived in the card for one revision and the
             card is the wrong container: at 15px inside a 7-unit padded tile it
@@ -229,9 +430,7 @@ export default function Join() {
             <div>
               <p className="label">If you close this tab</p>
               <p className="mt-4 text-display-md font-medium text-dust text-balance">
-                You&apos;ll open it again in February. The same one tap, one semester
-                less, and a batch of students who already know how to review your
-                code.
+                You&apos;ll be back in February. Same tap, one semester behind.
               </p>
             </div>
 
@@ -243,6 +442,17 @@ export default function Join() {
               <p className="mt-4 text-display-md font-semibold text-ink text-balance">
                 Somebody messages you this week. You show up regularly. By November
                 you&apos;re the one answering the questions.
+              </p>
+              {/* Quiet, mono, and pointing up — the loud version of this control is
+                  already in the bar at every scroll position, and a second filled
+                  button here would be the third thing on the page saying "join". */}
+              <p className="mt-7">
+                <Link
+                  href="#apply"
+                  className="tap link-u inline-block font-mono text-xs text-accent transition hover:brightness-125"
+                >
+                  ↑ Back to the sign-in
+                </Link>
               </p>
             </div>
           </div>

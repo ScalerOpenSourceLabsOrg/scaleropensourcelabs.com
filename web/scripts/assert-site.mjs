@@ -22,10 +22,13 @@ export const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 export const ROUTES = [
   { path: "/", name: "essence", inNav: true },
   { path: "/projects", name: "projects", inNav: true },
+  { path: "/events", name: "events", inNav: true },
   { path: "/programmes", name: "programmes", inNav: true },
   { path: "/hall-of-fame", name: "hall-of-fame", inNav: true },
   { path: "/team", name: "team", inNav: true },
-  { path: "/how-to-join", name: "how-to-join", inNav: true },
+  // `inNav: false`: the home page's explainer and the footer send readers here, but
+  // it is not a choice the bar offers. /how-to-join redirects to /join now.
+  { path: "/guide", name: "guide", inNav: false },
   // `inNav: false` is load-bearing, not a detail. /join is the destination of the
   // nav's Join BUTTON, which is an action rather than a page, and it is deliberately
   // never marked aria-current — an action that greys itself out at the moment it
@@ -53,6 +56,8 @@ export const ROUTES = [
   // and overflow bar as everything else. Swept signed out, like the two above.
   { path: "/dashboard/mentorship", name: "dash-mentorship", inNav: false, app: true },
   { path: "/dashboard/details", name: "dash-details", inNav: false, app: true },
+  { path: "/dashboard/events", name: "dash-events", inNav: false, app: true },
+  { path: "/dashboard/leaderboard", name: "dash-leaderboard", inNav: false, app: true },
 ];
 
 const MARKER = "Scaler Open Source Club";

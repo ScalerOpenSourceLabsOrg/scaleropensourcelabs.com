@@ -198,7 +198,7 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   });
 });
 
-const { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } =
+const { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, getDocs, query, where } =
   await import("firebase/firestore");
 
 console.log("\nfirestore.rules, executed against the emulator\n");
@@ -320,7 +320,7 @@ console.log("\n-- validation --");
 const badProfile = (over) => () =>
   setDoc(doc(member(UID_B, MAIL_B), "users", UID_B), withStamps(profileFor(UID_B, MAIL_B, over)));
 await check("a hostel outside the closed set", false, badProfile({ hostel: "uniworld-3" }));
-await check("a path outside the closed set", false, badProfile({ path: "hackathon" }));
+await check("a path outside the closed set", false, badProfile({ path: "bootcamp" }));
 await check("an empty required field", false, badProfile({ name: "" }));
 // An OPTIONAL field written as "" rather than omitted. This is the shape a clear-the-box
 // edit would take if lib/profile.ts stopped sending deleteField(), and it is refused —
@@ -857,6 +857,390 @@ await check("an admin cancelling a session", true, () =>
   deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", SESSION_1)),
 );
 
+// ---------------------------------------------------------------------------
+// BUILD DAYS AND THE ROLL.
+//
+// THE CASE THIS SECTION EXISTS FOR is "a member marking themselves present". Attendance is
+// one of the things the club selects its mentor-supported cohort on, so it is a number
+// somebody has a reason to inflate — the same argument that keeps contributions/ out of
+// every client's hands. A rule that let a student write their own row would look perfectly
+// reasonable in the file and would quietly make the record worthless.
+//
+// The rest of it is the shape: a closed set of tracks, a repository that is owner/name
+// rather than a URL, and https:// on both link fields — those render as anchors on the
+// organisers' screen, so a javascript: href typed into a text box is the cheapest XSS
+// there is.
+console.log("\n-- build days and attendance --");
+const BUILD_DAY = "session-build-day-1";
+
+await check("an admin scheduling a Build Day", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", BUILD_DAY),
+    withStamps(sessionFor({ kind: "build-day" })),
+  ),
+);
+await check("a session of some other invented kind", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", "session-odd"),
+    withStamps(sessionFor({ kind: "hackathon" })),
+  ),
+);
+
+const rollFor = (over = {}) => ({
+  session_id: BUILD_DAY,
+  taken_by: MAIL_ADMIN,
+  present_count: 1,
+  ...over,
+});
+/** The roll header's own stamps. `taken_at` is sent on the first write and frozen after,
+ *  so it cannot reuse withStamps() — that one writes created_at. */
+const stampRoll = (d, { first = true } = {}) => ({
+  ...d,
+  ...(first ? { taken_at: serverTimestamp() } : {}),
+  updated_at: serverTimestamp(),
+});
+
+await check("a member taking the roll", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "attendance", BUILD_DAY),
+    stampRoll(rollFor({ taken_by: MAIL_A })),
+  ),
+);
+await check("an admin taking the roll", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY), stampRoll(rollFor())),
+);
+await check("a roll claiming to be a different session's", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", "roll-odd"), stampRoll(rollFor())),
+);
+await check("a member reading how many came", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "attendance", BUILD_DAY)),
+);
+
+// The stored timestamp, read back the way the client does — a second organiser has to send
+// this value rather than a fresh sentinel, which is the whole reason saveRoll() in
+// web/lib/buildDays.ts re-reads the header it created.
+const takenAt = (
+  await getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY))
+).data().taken_at;
+
+await check("a second organiser marking on somebody else's roll", true, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "attendance", BUILD_DAY),
+    stampRoll(rollFor({ present_count: 2, taken_at: takenAt }), { first: false }),
+  ),
+);
+await check("a second organiser claiming they took the roll", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "attendance", BUILD_DAY),
+    stampRoll(rollFor({ taken_by: MAIL_OWNER, taken_at: takenAt }), { first: false }),
+  ),
+);
+await check("backdating when the roll was taken", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY),
+    stampRoll(rollFor({ taken_at: new Date(2020, 0, 1) }), { first: false }),
+  ),
+);
+
+const attendeeFor = (uid, email, over = {}) => ({
+  uid,
+  email,
+  name: "Asha Verma",
+  track: "beginner",
+  marked_by: MAIL_ADMIN,
+  ...over,
+});
+const stampRow = (d) => ({ ...d, updated_at: serverTimestamp() });
+
+await check("a member marking themselves present", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A, { marked_by: MAIL_A })),
+  ),
+);
+await check("an admin marking somebody present", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A)),
+  ),
+);
+await check("an organiser signing another organiser's name to a mark", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "attendance", BUILD_DAY, "present", UID_B),
+    stampRow(attendeeFor(UID_B, MAIL_B)),
+  ),
+);
+await check("a row filed under the wrong student", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_B),
+    stampRow(attendeeFor(UID_A, MAIL_A)),
+  ),
+);
+await check("a track nobody runs", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A, { track: "expert" })),
+  ),
+);
+await check("a repository written as a URL", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A, { repo: "https://github.com/facebook/react" })),
+  ),
+);
+await check("a javascript: link on an issue", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A, { issue_url: "javascript:alert(1)" })),
+  ),
+);
+await check("a row with a field nobody reviewed", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(attendeeFor(UID_A, MAIL_A, { score: 10 })),
+  ),
+);
+await check("what an organiser actually writes at a Build Day", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A),
+    stampRow(
+      attendeeFor(UID_A, MAIL_A, {
+        track: "intermediate",
+        repo: "facebook/react",
+        issue_url: "https://github.com/facebook/react/issues/28471",
+        blocker: "Tests fail on setup",
+        next_step: "Ask which node version CI uses",
+      }),
+    ),
+  ),
+);
+
+await check("a member reading their own attendance", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "attendance", BUILD_DAY, "present", UID_A)),
+);
+await check("a member reading somebody else's attendance", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "attendance", BUILD_DAY, "present", UID_A)),
+);
+// The list rule is what keeps an attributed record from being an enumerable one — the same
+// note the form responses carry.
+await check("a member enumerating who came", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "attendance", BUILD_DAY, "present")),
+);
+await check("an admin enumerating who came", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present")),
+);
+
+await check("a member taking themselves off the roll", false, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "attendance", BUILD_DAY, "present", UID_A)),
+);
+await check("an admin unmarking somebody", true, () =>
+  deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "attendance", BUILD_DAY, "present", UID_A)),
+);
+// Deleting the header would leave every row under it in place while the record claimed the
+// roll was never taken — Firestore subcollections outlive their parent.
+await check("deleting a roll header, even as an owner", false, () =>
+  deleteDoc(doc(member(UID_OWNER, MAIL_OWNER), "attendance", BUILD_DAY)),
+);
+
+// THE LIVE FLOOR. Self-reported, so the student writes their own row — but only while the
+// Build Day is on, only their own, and never the mentor's half of it. Every student may
+// read the floor; mentors move only the help fields.
+console.log("\n-- build day floor --");
+const LIVE_DAY = "session-build-day-live";
+const OLD_DAY = "session-build-day-old";
+const UID_MENTOR = "uid-floor-mentor";
+const MAIL_MENTOR = "helper.23bcs10077@sst.scaler.com";
+
+await check("an admin scheduling a Build Day that is on now", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", LIVE_DAY),
+    withStamps(sessionFor({ kind: "build-day", starts_at: new Date(Date.now() - 10 * 60_000) })),
+  ),
+);
+await check("an admin scheduling a Build Day long past", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", OLD_DAY),
+    withStamps(sessionFor({ kind: "build-day", starts_at: new Date(2020, 0, 1) })),
+  ),
+);
+
+const floorMentorFor = (over = {}) => ({
+  email: MAIL_MENTOR,
+  name: "Kabir Shah",
+  active: true,
+  added_by: MAIL_ADMIN,
+  added_at: serverTimestamp(),
+  updated_at: serverTimestamp(),
+  ...over,
+});
+await check("a student appointing a floor mentor", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "floor_mentors", MAIL_MENTOR),
+    floorMentorFor({ added_by: MAIL_A })),
+);
+await check("an admin appointing a floor mentor", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "floor_mentors", MAIL_MENTOR), floorMentorFor()),
+);
+await check("a floor mentor off the college domain", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "floor_mentors", "kabir@gmail.com"),
+    floorMentorFor({ email: "kabir@gmail.com" })),
+);
+await check("a floor mentor reading their own row", true, () =>
+  getDoc(doc(member(UID_MENTOR, MAIL_MENTOR), "floor_mentors", MAIL_MENTOR)),
+);
+await check("a student reading somebody's floor-mentor row", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "floor_mentors", MAIL_MENTOR)),
+);
+
+const floorRowFor = (over = {}) => ({
+  uid: UID_A,
+  name: "Asha Verma",
+  phase: "joined",
+  phase_at: serverTimestamp(),
+  help: "none",
+  updated_at: serverTimestamp(),
+  ...over,
+});
+const floorRef = (db, uid = UID_A, day = LIVE_DAY) => doc(db, "floor", day, "students", uid);
+const stored = async () => (await getDoc(floorRef(member(UID_A, MAIL_A)))).data();
+
+await check("a student joining a floor that is closed", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A), UID_A, OLD_DAY), floorRowFor()),
+);
+await check("a student joining somebody else onto the floor", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A), UID_B), floorRowFor({ uid: UID_B })),
+);
+await check("a student joining with a phase that does not exist", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)), floorRowFor({ phase: "teleporting" })),
+);
+await check("a student joining the live floor", true, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)), floorRowFor()),
+);
+
+let row = await stored();
+await check("moving phase, stamped now", true, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, phase: "finding-repo", phase_at: serverTimestamp(), updated_at: serverTimestamp() }),
+);
+row = await stored();
+await check("moving phase but keeping the old clock", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, phase: "found-repo", updated_at: serverTimestamp() }),
+);
+await check("a note with no hand up", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, help_note: "help", updated_at: serverTimestamp() }),
+);
+await check("a student claiming their own hand", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)), {
+    ...row, help: "claimed", help_at: serverTimestamp(),
+    claimed_by: MAIL_A, claimed_name: "Me", claimed_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+  }),
+);
+await check("raising a hand", true, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)), {
+    ...row, help: "open", help_at: serverTimestamp(), help_note: "npm install fails",
+    updated_at: serverTimestamp(),
+  }),
+);
+
+await check("another student reading a raised hand", true, () =>
+  getDoc(floorRef(member(UID_B, MAIL_B))),
+);
+await check("another student listing the floor", true, () =>
+  getDocs(collection(member(UID_B, MAIL_B), "floor", LIVE_DAY, "students")),
+);
+await check("a floor mentor listing the floor", true, () =>
+  getDocs(collection(member(UID_MENTOR, MAIL_MENTOR), "floor", LIVE_DAY, "students")),
+);
+await check("an organiser listing the floor", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "floor", LIVE_DAY, "students")),
+);
+await check("a visitor who is not signed in listing the floor", false, () =>
+  getDocs(collection(env.unauthenticatedContext().firestore(), "floor", LIVE_DAY, "students")),
+);
+
+const claimBy = (email, name) => ({
+  help: "claimed",
+  claimed_by: email,
+  claimed_name: name,
+  claimed_at: serverTimestamp(),
+  updated_at: serverTimestamp(),
+});
+await check("a student who is not a mentor claiming a hand", false, () =>
+  updateDoc(floorRef(member(UID_B, MAIL_B)), claimBy(MAIL_B, "Ravi")),
+);
+await check("a mentor claiming in somebody else's name", false, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), claimBy(MAIL_ADMIN, "Kabir Shah")),
+);
+await check("a mentor moving a student's phase", false, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), {
+    ...claimBy(MAIL_MENTOR, "Kabir Shah"), phase: "merged",
+  }),
+);
+await check("a mentor claiming a raised hand", true, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), claimBy(MAIL_MENTOR, "Kabir Shah")),
+);
+
+row = await stored();
+await check("a student editing their note while a mentor is on the way", true, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, help_note: "npm install fails on node 18", updated_at: serverTimestamp() }),
+);
+row = await stored();
+await check("a student rewriting who is coming", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, claimed_name: "Somebody nicer", updated_at: serverTimestamp() }),
+);
+await check("a mentor handing a claim back to the queue", true, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), {
+    help: "open",
+    claimed_by: deleteField(),
+    claimed_name: deleteField(),
+    claimed_at: deleteField(),
+    updated_at: serverTimestamp(),
+  }),
+);
+await check("a mentor marking a hand done", true, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), {
+    help: "none",
+    help_at: deleteField(),
+    help_note: deleteField(),
+    last_helped_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+  }),
+);
+row = await stored();
+await check("a student resetting when they were last helped", false, () =>
+  setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...row, last_helped_at: serverTimestamp(), updated_at: serverTimestamp() }),
+);
+await check("a mentor checking in on a student who never asked", true, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), {
+    ...claimBy(MAIL_MENTOR, "Kabir Shah"),
+    help_at: serverTimestamp(),
+  }),
+);
+row = await stored();
+await check("a student putting their hand down", true, () => {
+  // eslint-disable-next-line no-unused-vars
+  const { help_at, help_note, claimed_by, claimed_name, claimed_at, ...rest } = row;
+  return setDoc(floorRef(member(UID_A, MAIL_A)),
+    { ...rest, help: "none", updated_at: serverTimestamp() });
+});
+await check("deleting a floor row", false, () => deleteDoc(floorRef(member(UID_A, MAIL_A))));
+
+await check("an admin switching a floor mentor off", true, async () => {
+  const m = (await getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "floor_mentors", MAIL_MENTOR))).data();
+  return setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "floor_mentors", MAIL_MENTOR),
+    { ...m, active: false, updated_at: serverTimestamp() });
+});
+await check("a switched-off floor mentor claiming a hand", false, () =>
+  updateDoc(floorRef(member(UID_MENTOR, MAIL_MENTOR)), {
+    ...claimBy(MAIL_MENTOR, "Kabir Shah"), help_at: serverTimestamp(),
+  }),
+);
+
 console.log("\n-- forms and polls --");
 const FIELDS = [
   { id: "name-0", label: "Your name", type: "short", required: true },
@@ -1347,6 +1731,50 @@ await check("a non-member answering a members-only form", false, () =>
   ),
 );
 
+console.log("\n-- the leaderboard: derived, not a widened collection --");
+
+// WHAT THIS SECTION GUARDS. The obvious way to ship a leaderboard is `allow list: if
+// isClubMember()` on contributions/ — and that is not a leaderboard rule, it is "every
+// member may read every member's GitHub record", with the ranking being the part that
+// happens to render. So the Cloud Function derives ONE document holding a name, a handle
+// and three counts per member, and that is what members read. The case proving the
+// collection itself stays shut is already above, under contributions.
+//
+// UID_A is a member by this point in the file and UID_B is not, which is the pair every
+// "members only" case here is measured against.
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  const { doc, setDoc } = await import("firebase/firestore");
+  // Seeded past the rules, which is how it arrives in production too: the Admin SDK does
+  // not pass through this file at all. There is no in-rules way to create one, and that
+  // is the feature rather than a gap in the test.
+  await setDoc(doc(db, "leaderboard", "current"), {
+    rows: [{ uid: UID_A, name: "Asha Verma", github: "asha", merged: 4, repos: 3, issues: 1 }],
+    counted: 1,
+    built_at: serverTimestamp(),
+  });
+});
+
+await check("a member reading the leaderboard", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "leaderboard", "current")),
+);
+// THE CASE THAT MATTERS MOST. It names people, and it names them to the club rather than
+// to the domain — a verified college address has never been membership in anything.
+await check("a signed-in student who is not a member reading it", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "leaderboard", "current")),
+);
+await check("a stranger reading the leaderboard", false, () =>
+  getDoc(doc(stranger(), "leaderboard", "current")),
+);
+await check("a member editing their own rank", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "leaderboard", "current"), { rows: [], counted: 0 }),
+);
+// Even an organiser writes this through the function or not at all. A rank somebody can
+// type by hand is a rank somebody will type by hand.
+await check("an admin writing the leaderboard by hand", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "leaderboard", "current"), { rows: [], counted: 0 }),
+);
+
 console.log("\n-- membership: who may grant it --");
 
 // THE PRIVILEGE ESCALATION THIS MODEL LIVES OR DIES ON. Membership sits on a document
@@ -1434,6 +1862,9 @@ await check("writing to an unknown collection", false, () =>
   setDoc(doc(member(UID_A, MAIL_A), "secrets", "x"), { a: 1 }),
 );
 
+// AND LEAVE IT EMPTY. The emulator is also what the dev server reads, so fixtures left
+// behind here (the "Which Saturday?" polls and sign-ups) turn up on a real dashboard.
+await env.clearFirestore();
 await env.cleanup();
 console.log(
   fail === 0

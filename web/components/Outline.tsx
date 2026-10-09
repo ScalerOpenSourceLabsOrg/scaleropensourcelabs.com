@@ -36,7 +36,7 @@
 //
 // 3. Active section comes from IntersectionObserver, not a scroll handler doing
 //    arithmetic on offsets. Offsets go stale whenever a section above changes
-//    height, and this page's sections change height with the content in club.ts.
+//    height, and this page's sections change height with the content files.
 //
 // 4. The panel is `position: absolute` inside a `relative` wrapper around the
 //    toggle, and NOT `position: fixed` — which is the one piece of geometry here
@@ -257,8 +257,12 @@ export default function Outline() {
              The max-height is the rest of the viewport from there — 1rem of nav
              inset, the 56px it spans to that edge, the gap, and 1rem of air at the
              bottom — so a long list scrolls itself instead of running off the
-             screen. */
-          className="plate absolute right-0 top-[calc(50%+28px+0.5rem)] z-10 max-h-[calc(100vh-2.5rem-56px)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3"
+             screen. The 100vh is divided by the page scale and the rem and px terms
+             beside it are not: the page renders at 80% (--zoom in globals.css), and
+             `zoom` scales those two but leaves vh resolving against the unscaled
+             viewport. Undivided, the panel would stop 20% of a screen short of the
+             room it actually has and scroll a list that fits. */
+          className="plate absolute right-0 top-[calc(50%+28px+0.5rem)] z-10 max-h-[calc(100vh/var(--zoom)-2.5rem-56px)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3"
         >
           <p className="label px-2 pb-2 pt-1">On this page</p>
           {/* CLOSING ON SELECTION is what makes an overlay acceptable here. The

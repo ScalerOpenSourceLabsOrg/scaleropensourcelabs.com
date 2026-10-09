@@ -1,14 +1,18 @@
-// PROJECTS — three separate fields, deliberately not one mixed grid.
+// PROJECTS — two fields, not three.
 //
-// The three answer different questions and mixing them destroys all three:
+// They answer different questions, and keeping them apart is what stops the most
+// valuable one getting diluted:
 //
-//   BUILD DAYS      "what could I work on this Saturday?"      — join-able now
-//   CLUB REPOS      "does this club actually maintain things?"  — longer-lived
-//   IN THE WILD     "has anyone here landed code elsewhere?"    — the real proof
+//   OURS        "what could I work on, and who reviews it?"   — join-able now
+//   IN THE WILD "has anyone here landed code elsewhere?"      — the real proof
 //
-// A single grid of cards forces the reader to work out which is which from the
-// text, and the most valuable one — upstream work in somebody else's repository —
-// gets diluted by our own side projects sitting next to it at the same weight.
+// BUILD DAYS AND CLUB REPOS USED TO BE TWO SECTIONS and are now one. The split was
+// a distinction the club could see and a reader could not: both are our own
+// repositories, both are picked up on a build day, both are reviewed by somebody
+// you can find in the lab. What it produced in practice was a page whose first
+// section was an empty-state placeholder while the one genuinely clickable
+// repository sat below the fold in a second section. One list, ordered so the
+// things running right now come first.
 //
 // ---------------------------------------------------------------------------
 // WHY THERE ARE NO ORG LOGOS on the upstream cards.
@@ -22,7 +26,7 @@
 // is ours to use, and cannot 404.
 
 // ---------------------------------------------------------------------------
-// 1. BUILD DAY PROJECTS — what is running right now.
+// 1a. BUILD DAY PROJECTS — what is running right now. Rendered first in the one list.
 //
 // The gate here is `published`, and it means something specific: the "good first
 // issue" link must actually resolve to open issues. A build-day card promising a
@@ -74,7 +78,8 @@ export function publishedBuildDay(): BuildDayProject[] {
 }
 
 // ---------------------------------------------------------------------------
-// 2. CLUB REPOS — the software the club owns and runs.
+// 1b. CLUB REPOS — the software the club owns and runs. Rendered in the same list,
+// underneath the build days.
 //
 // This site is one of them, and it is the honest flagship: a real repository, with
 // a real CONTRIBUTING.md, a real good-first-issue label, and a maintainer a member
@@ -103,14 +108,58 @@ export const CLUB_REPOS: ClubRepo[] = [
     // Firestore, and this site's whole argument is that every claim on it is checkable.
     // A stale boast is the one kind of copy this page cannot carry.
     what:
-      "This website. Next.js, statically rendered — all the content lives in typed arrays under web/content, so adding a person or a project is an edit to one file. The only moving part is the join form, which writes applications to Firestore.",
+      "This website. Next.js, with all the content in typed arrays — adding a person or project is a one-file edit.",
     whyStartHere:
-      "It is the lowest-friction first pull request that exists for you, because the maintainer reviewing it is somebody you can find in the lab and ask. The repo also carries a CONTRIBUTING.md written for people who have never opened a PR anywhere.",
+      "The easiest first PR around: your reviewer's in the lab. CONTRIBUTING.md is written for total first-timers.",
     stack: ["TypeScript", "Next.js", "Tailwind", "Playwright"],
     goodFirstIssue:
       "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22",
     contributing:
       "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/blob/main/CONTRIBUTING.md",
+    published: true,
+  },
+  {
+    name: "authzprobe",
+    repo: "https://github.com/ScalerOpenSourceLabsOrg/authzprobe",
+    what:
+      "A CLI that takes an OpenAPI spec and two logins, and checks whether one can reach the other's data — the BOLA and BFLA bugs topping the OWASP API Security Top 10.",
+    whyStartHere:
+      "`npm run demo` hits a deliberately broken server, so you see real findings first. Issues are labelled starter, intermediate or ambitious.",
+    stack: ["TypeScript", "Node", "Vitest", "Docker"],
+    goodFirstIssue:
+      "https://github.com/ScalerOpenSourceLabsOrg/authzprobe/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22",
+    contributing:
+      "https://github.com/ScalerOpenSourceLabsOrg/authzprobe/blob/main/CONTRIBUTING.md",
+    published: true,
+  },
+  {
+    name: "osc-learners",
+    repo: "https://github.com/ScalerOpenSourceLabsOrg/osc-learners",
+    what:
+      "The Learners Wall: a searchable grid of member cards. Plain HTML and CSS — open index.html and see your change.",
+    whyStartHere:
+      "Perfect for your very first PR: your card is one image and one block of HTML, so git is the only new thing.",
+    stack: ["HTML", "CSS"],
+    // No goodFirstIssue link on purpose: the repo carries the label but had no
+    // open issues under it when this card went up, and the rule at the head of
+    // this file is that the link must resolve to something takeable. Add it the
+    // day there are issues behind it.
+    contributing:
+      "https://github.com/ScalerOpenSourceLabsOrg/osc-learners/blob/main/CONTRIBUTING.md",
+    published: true,
+  },
+  {
+    name: "podium",
+    repo: "https://github.com/ScalerOpenSourceLabsOrg/podium",
+    what:
+      "Run a hackathon end to end — and judge it fairly. Every judge scores a shared anchor set, so a harsh marker can't sink a good team.",
+    whyStartHere:
+      "One `npm run seed` and you're logged in with no password. A real full-stack app, with the architecture written up in /docs.",
+    stack: ["TypeScript", "Next.js", "Prisma", "PostgreSQL"],
+    // No goodFirstIssue link yet: zero open issues under the label when this
+    // card went up. Same rule as osc-learners — add it once there are some.
+    contributing:
+      "https://github.com/ScalerOpenSourceLabsOrg/podium/blob/main/CONTRIBUTING.md",
     published: true,
   },
   // ---- Awaiting real content ---------------------------------------------
@@ -123,7 +172,85 @@ export function publishedClubRepos(): ClubRepo[] {
 }
 
 // ---------------------------------------------------------------------------
-// 3. MEMBER CONTRIBUTIONS IN THE WILD — the strongest thing on this page.
+// THE ONE LIST THE PAGE ACTUALLY RENDERS.
+//
+// Both shapes above collapse into this. It is a superset rather than a lowest
+// common denominator: a club repo keeps its CONTRIBUTING.md and its repo link, a
+// build-day project keeps its maintainer and its team size, and the card renderer
+// skips every row it has no data for. Nothing had to be thrown away to merge the
+// two sections.
+//
+// `clubMaintained` is the only flag, and it exists because the difference is still
+// worth one word on a card even though it is not worth a section: it tells a
+// reader which repositories will still be here next term.
+
+export type ProjectCard = {
+  name: string;
+  /** ONE line. The problem it solves, in the reader's terms, not the architecture. */
+  problem: string;
+  stack: string[];
+  /** Who to actually talk to. A name, not a role. */
+  maintainer?: string;
+  maintainerGithub?: string;
+  repo?: string;
+  goodFirstIssue?: string;
+  contributing?: string;
+  /** Why a beginner specifically should start here. */
+  whyStartHere?: string;
+  /** How many people are on it, so a reader can judge whether to join. */
+  size?: string;
+  clubMaintained?: boolean;
+};
+
+function fromBuildDay(p: BuildDayProject): ProjectCard {
+  return {
+    name: p.name,
+    problem: p.problem,
+    stack: p.stack,
+    // Empty strings in the scaffold entry must not reach the card as empty rows.
+    maintainer: p.maintainer || undefined,
+    maintainerGithub: p.maintainerGithub,
+    repo: p.repo,
+    goodFirstIssue: p.goodFirstIssue,
+    size: p.size,
+  };
+}
+
+function fromClubRepo(r: ClubRepo): ProjectCard {
+  return {
+    name: r.name,
+    problem: r.what,
+    stack: r.stack,
+    repo: r.repo,
+    goodFirstIssue: r.goodFirstIssue,
+    contributing: r.contributing,
+    whyStartHere: r.whyStartHere,
+    clubMaintained: true,
+  };
+}
+
+/**
+ * Build-day projects first, then the club's own repositories. That order is the
+ * point of the merge: what is running this Saturday leads, and the long-lived
+ * repositories are the backstop for somebody reading on a Tuesday.
+ *
+ * The holding card only appears when the combined list is empty, which — unlike
+ * the old split — means it stays hidden for as long as the club maintains a single
+ * public repository.
+ */
+export function publishedProjects(): ProjectCard[] {
+  const cards = [
+    ...BUILD_DAY.filter((p) => p.published).map(fromBuildDay),
+    ...publishedClubRepos().map(fromClubRepo),
+  ];
+  if (cards.length > 0) return cards;
+  return process.env.NODE_ENV === "production"
+    ? []
+    : BUILD_DAY_SCAFFOLD.map(fromBuildDay);
+}
+
+// ---------------------------------------------------------------------------
+// 2. MEMBER CONTRIBUTIONS IN THE WILD — the strongest thing on this page.
 //
 // Code that a maintainer who owes us nothing agreed to merge into a project we do
 // not control. Everything else here is work we assigned ourselves.
@@ -161,7 +288,7 @@ export const UPSTREAM: Upstream[] = [
     url: "https://github.com/OWASP/OpenCRE",
     org: "OWASP",
     what:
-      "OWASP's Common Requirement Enumeration — the open catalogue that maps security standards to each other, so a control in one framework can be traced to its equivalent in another.",
+      "OWASP's Common Requirement Enumeration — the open catalogue that maps security standards to each other.",
     did:
       "Second-highest contributor by commits on the default branch, out of forty. 74 pull requests opened, 46 merged.",
     member: "Prateek Singh",

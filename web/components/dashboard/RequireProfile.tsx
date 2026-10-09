@@ -33,12 +33,13 @@ import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import SignInCard from "@/components/SignInCard";
 import { useAuth } from "@/lib/auth";
+import { usingEmulator } from "@/lib/firebase";
 import { isComplete, readProfile, type Profile } from "@/lib/profile";
 
 export default function RequireProfile({
   /** Named so the waiting card can say what is being waited for. A blank card on a slow
    *  connection is on screen long enough to read. */
-  loading = "Finding your things…",
+  loading = "Loading…",
   children,
 }: {
   loading?: string;
@@ -59,7 +60,15 @@ export default function RequireProfile({
       // pretending there is no profile.
       console.error("[osc] could not read profile", e);
       setProfile(null);
-      setLoadError("We could not load your details. Reload the page, or email us.");
+      // Against the local emulator, "unavailable" means the emulator process is not
+      // running — the browser kept its session, the database went with the terminal.
+      // Say that, instead of a message that sends a developer hunting through the code.
+      const down = usingEmulator() && (e as { code?: string })?.code === "unavailable";
+      setLoadError(
+        down
+          ? "Local database isn't running. Restart with npm run dev, then sign in again."
+          : "Could not load your details. Reload the page, or email us.",
+      );
     }
   }, []);
 
@@ -74,8 +83,15 @@ export default function RequireProfile({
   const needsOnboarding =
     Boolean(user) && profile !== undefined && !isComplete(profile) && !loadError;
 
+  // ?path= RIDES ALONG. /join hands a new member to /dashboard?path=<id>, and this is the
+  // redirect that gets them to the form that saves it — dropping it here loses the one
+  // thing they told us before signing in. Read from location rather than
+  // useSearchParams, which would need a Suspense boundary around every section using
+  // this gate. OnboardingGate validates the value, so it is passed through untouched.
   useEffect(() => {
-    if (needsOnboarding) router.replace("/onboarding");
+    if (!needsOnboarding) return;
+    const path = new URLSearchParams(window.location.search).get("path");
+    router.replace(path ? `/onboarding?path=${encodeURIComponent(path)}` : "/onboarding");
   }, [needsOnboarding, router]);
 
   if (user === undefined || (user && profile === undefined) || needsOnboarding) {
@@ -85,9 +101,8 @@ export default function RequireProfile({
             rather than a flicker between two states that have one. Without it the document
             has no name for as long as the check takes. */}
         <h1 className="sr-only">Your dashboard</h1>
-        <p className="label">One moment</p>
-        <p className="mt-3 text-body text-haze">
-          {needsOnboarding ? "Just three questions first…" : loading}
+        <p className="text-body text-haze">
+          {needsOnboarding ? "Taking you to onboarding…" : loading}
         </p>
       </div>
     );
@@ -101,7 +116,7 @@ export default function RequireProfile({
         <h1 className="sr-only">Your dashboard</h1>
         <p className="chip">Something went wrong</p>
         <p className="mt-4 text-body text-ember" role="alert">
-          {loadError || "We could not load your details."}
+          {loadError || "Could not load your details."}
         </p>
       </div>
     );

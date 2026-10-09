@@ -307,6 +307,12 @@ actual collection.
 Delete `.env.local` when you are done, or the form will keep pointing at an emulator
 that is no longer running.
 
+**Shortcut:** with `NEXT_PUBLIC_FIRESTORE_EMULATOR` in `.env.local`, plain `npm run dev`
+starts the Auth + Firestore emulator for you (or reuses one already running), and saves
+its data on Ctrl+C to `%LOCALAPPDATA%\osc-dev\emulator-data` (`~/.cache/osc-dev/...`
+elsewhere; override with `OSC_EMULATOR_DATA`), so accounts survive restarts. Delete
+that folder for a clean slate. `npm run dev:next` is the old, Next-only command.
+
 ### Testing the whole flow in a browser
 
 ```bash

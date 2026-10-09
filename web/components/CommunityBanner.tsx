@@ -10,7 +10,7 @@
 //
 //   1. "Join 300+ Contributors". There is no 300 anywhere in this repo, and no
 //      field that could become one: the club records its published
-//      selections (SELECTIONS in club.ts, and the count moves as names come in —
+//      selections (SELECTIONS in content/selections.ts, and the count moves as
 //      which is why it is not written out here), eight people running it, and
 //      one project with an API-verified
 //      merge count. A recruitment page for sixteen-year-olds that inflates its
@@ -30,7 +30,7 @@
 import Portrait from "@/components/Portrait";
 import Doodle from "@/components/Doodle";
 import CelebrateLink from "@/components/fx/CelebrateLink";
-import { publishedSelections, selectionStats } from "@/content/club";
+import { publishedSelections, selectionStats } from "@/content/selections";
 
 /** How many faces before the stack stops reading as a group and starts as a list. */
 const FACES = 5;
@@ -45,24 +45,17 @@ export default function CommunityBanner() {
   return (
     <div className="section pt-10 sm:pt-14">
       <div
-        className="rounded-tile border-2 border-black px-6 py-6 shadow-[4px_4px_0_0_#000] sm:px-8"
-        // #F0F6FF ON BOTH THEMES, and every foreground inside it is fixed to
-        // match. This is a self-contained object like the hero terminal — the
-        // terminal stays dark on a light page, this stays pale on a dark one —
-        // and the payoff is the same: one contrast pair to prove instead of two,
-        // and no chance of a token drifting underneath it.
-        //
-        // It also means the inline style is safe. An inline background cannot be
-        // overridden by a theme rule, so this would be a bug if the panel were
-        // ever meant to invert; stating that it is not is what makes it correct.
-        style={{ background: "#F0F6FF" }}
+        // THEMED NOW, where it was a fixed pale-blue panel on both themes. On the
+        // dark-first page that panel was a white slab under everything else; it
+        // reads as one of GitHub's bordered boxes instead, with the site's hard
+        // offset shadow in the accent.
+        className="rounded-tile border border-seam bg-band px-6 py-6 shadow-[5px_5px_0_0_rgb(var(--accent)/0.45)] sm:px-8"
       >
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           {/* Left: the claim. Pitch black regardless of theme, because this panel
               keeps its pale ground on both — 18.4:1 on #F0F6FF. */}
           <p
-            className="font-display text-display-md font-bold uppercase leading-[1.15] tracking-[-0.01em]"
-            style={{ color: "#0A0A0A" }}
+            className="font-display text-display-md font-bold leading-[1.15] tracking-[-0.01em] text-ink"
           >
             The students winning are{" "}
             <span className="relative inline-block whitespace-nowrap">
@@ -73,8 +66,7 @@ export default function CommunityBanner() {
                   up the leading. */}
               <Doodle
                 kind="underline"
-                className="absolute -bottom-1.5 left-0 h-2 w-full"
-                style={{ color: "#0038FF" }}
+                className="absolute -bottom-1.5 left-0 h-2 w-full text-accent"
               />
             </span>
           </p>
@@ -95,18 +87,17 @@ export default function CommunityBanner() {
                   // is what separates overlapping circles into distinct faces
                   // rather than one smeared row.
                   className="relative inline-block h-9 w-9 overflow-hidden rounded-full ring-2"
-                  style={{ zIndex: FACES - i, ["--tw-ring-color" as string]: "#F0F6FF" }}
+                  style={{ zIndex: FACES - i, ["--tw-ring-color" as string]: "rgb(var(--band))" }}
                 >
                   <Portrait name={p.name} photo={p.photo} className="h-full w-full" />
                 </span>
               ))}
             </div>
             <p
-              className="font-label text-sm font-bold leading-tight"
-              style={{ color: "#0A0A0A" }}
+              className="font-mono text-sm font-medium leading-tight text-ink"
             >
               {stats.total} selected
-              <span className="block text-sm font-medium" style={{ color: "#3F4A5A" }}>
+              <span className="block text-sm font-normal text-haze">
                 this cohort
               </span>
             </p>

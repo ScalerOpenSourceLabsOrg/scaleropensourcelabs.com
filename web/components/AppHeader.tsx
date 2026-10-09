@@ -20,6 +20,7 @@
 // forbids. Same object, different contents.
 
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth";
 import { batchFromEmail } from "@/lib/batch";
@@ -44,9 +45,10 @@ export default function AppHeader() {
             screen. The QA sweep measured this at 33x28 on mobile before it was added. */}
         <Link
           href="/"
-          className="-my-3 inline-block shrink-0 py-3 font-display text-lg font-bold tracking-tight text-ink transition-colors hover:text-accent"
+          aria-label="CherryPick — home"
+          className="-my-3 inline-block shrink-0 py-3 text-ink transition-colors hover:text-accent"
         >
-          OSC
+          <Logo />
         </Link>
 
         {/* The rule is drawn rather than typed, for the reason the site nav's separators

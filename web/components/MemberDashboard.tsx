@@ -86,10 +86,7 @@ function Overview({ user, profile }: { user: User; profile: Profile }) {
 
   return (
     <>
-      <SectionHead eyebrow="Your week" title={`${first}.`}>
-        Anything the club needs from you turns up here. When this page is quiet there is
-        genuinely nothing to do — which is most weeks, and is not a sign you are behind.
-      </SectionHead>
+      <SectionHead eyebrow="Your week" title={`${first}.`} />
 
       {/* "WAITING ON YOU" LEADS, and it is the one figure the design did not have. Opening
           on a contribution total makes the page a leaderboard, which is the wrong

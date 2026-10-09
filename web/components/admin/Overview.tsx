@@ -35,12 +35,12 @@ function weekStart(d: Date): Date {
 /** Where to go, with what is behind it stated. A grid of names would make an organiser
  *  click each one to find out which holds the thing they came for. */
 const SECTIONS: { href: string; title: string; blurb: string }[] = [
-  { href: "/admin/members", title: "Members", blurb: "The roster, the breakdowns by batch and hostel, and the export." },
-  { href: "/admin/mentorship", title: "Mentorship", blurb: "Publish mentors, and see who has asked for whom." },
-  { href: "/admin/notices", title: "Notices", blurb: "The board every member reads on their dashboard." },
+  { href: "/admin/members", title: "Members", blurb: "Roster, batch and hostel breakdowns, export." },
+  { href: "/admin/mentorship", title: "Mentorship", blurb: "Publish mentors, see who picked whom." },
+  { href: "/admin/notices", title: "Notices", blurb: "The board on every member's dashboard." },
   { href: "/admin/sessions", title: "Sessions", blurb: "When the club meets, and what is on." },
-  { href: "/admin/forms", title: "Forms", blurb: "Ask the club something, and read the answers." },
-  { href: "/admin/team", title: "Team", blurb: "Who is an organiser, and what the site says about them." },
+  { href: "/admin/forms", title: "Forms", blurb: "Ask the club, read the answers." },
+  { href: "/admin/team", title: "Team", blurb: "Organisers and their profiles." },
 ];
 
 function Body() {
@@ -88,7 +88,7 @@ function Body() {
     } catch (e) {
       console.error("[osc] could not load the overview", e);
       setError(
-        "Firestore refused the query. Either your address is not in the admins collection, or the rules are not deployed.",
+        "Firestore refused the query — you're not in admins, or the rules aren't deployed.",
       );
     }
   }, []);
@@ -103,8 +103,7 @@ function Body() {
   return (
     <>
       <SectionHead eyebrow="Organisers" title="The club, at a glance.">
-        Every figure here is counted in the database rather than by reading the membership,
-        so this page costs the same whether the club is thirty people or three thousand.
+        Live counts, straight from the database.
       </SectionHead>
 
       {error && (

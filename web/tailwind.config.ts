@@ -55,6 +55,8 @@ const config: Config = {
         // Condensed caps for eyebrows, buttons and chips.
         label: ["var(--font-label)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        // The CherryPick wordmark only.
+        brand: ["var(--font-brand)", "Georgia", "serif"],
       },
       // A real scale, not arbitrary clamps scattered through the markup.
       fontSize: {
@@ -136,6 +138,27 @@ const config: Config = {
         // quarters of the sizes measured below — so a 0.75 vw term would now hold the
         // OLD size across most desktop widths while the ends grew, which is the exact
         // failure the note above describes, in reverse.
+        //
+        // AND THEY STAY AT FULL VALUE NOW THAT THE SITE IS SCALED AGAIN. The page
+        // renders at 80% — `zoom: var(--zoom)` on the root, see --zoom in
+        // globals.css — and the vw terms below are DIVIDED by that token rather than
+        // pre-multiplied by 0.8 the way they were once pre-multiplied by 0.75. The
+        // two are not the same edit and only one of them is right.
+        //
+        // Pre-multiplying bakes the scale into the size: `4.96vw` states that a
+        // 1280px viewport wants a 63px headline, which is a claim about the design
+        // that is not true — the design wants 79px and the page is being shown
+        // smaller. Dividing states the real size and lets the zoom do the scaling,
+        // so these numbers keep meaning what they say and the scale stays one
+        // number in one place.
+        //
+        // It also fixes the clamp, which pre-multiplying gets wrong at the ends. A
+        // viewport at 80% zoom is 1600px wide where the window is 1280, and at
+        // 1600px `6.2vw` is 99px — past the 5.25rem ceiling, so the step pins to its
+        // rem maximum and the headline stops growing. Dividing reproduces that
+        // crossover at the width it really happens; pre-multiplying moves the
+        // crossover to a viewport 25% wider and keeps the headline tracking vw
+        // through a range where the browser would already have capped it.
         // ONE ELEMENT ON THE SITE WEARS THIS: the home page hero, which is two words.
         // The four sub-page mastheads used to as well, and at a 12px root that was 63px
         // and merely large. At 84px a sixteen-word title — "Paid, competitive, and open
@@ -143,8 +166,8 @@ const config: Config = {
         // exist." — is four lines that fill a 1440x900 viewport on their own, with the
         // chip above and the standfirst below and nothing else visible. They take
         // display-lg now. A step called xl that everything uses is not a step.
-        "display-xl": ["clamp(2.75rem, 6.2vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
-        "display-lg": ["clamp(1.9375rem, 3.6vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
+        "display-xl": ["clamp(2.75rem, calc(6.2vw / var(--zoom)), 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.9375rem, calc(3.6vw / var(--zoom)), 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
         // Apple's tracking is POSITIVE below roughly 40px. Measured off
         // apple.com/mac: 80px/-1.2px (-0.015em), 48px/-0.144px (-0.003em), then it
         // crosses zero — 32px/+0.128px (+0.004em), 28px/+0.196px (+0.007em),
@@ -152,7 +175,7 @@ const config: Config = {
         // below the hero was being over-tightened. Optical sizing runs the other
         // way at text sizes: large type needs closing up, small type needs opening
         // out, and copying the display value downward is the usual mistake.
-        "display-md": ["clamp(1.375rem, 2.1vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
+        "display-md": ["clamp(1.375rem, calc(2.1vw / var(--zoom)), 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
         // Body copy gets the same treatment for a different reason: 1.5 is the WCAG
         // 1.4.8 floor for a block of text, not a comfortable value, and this page's
         // paragraphs run to a 44em measure. Long lines need more leading than short
@@ -165,7 +188,7 @@ const config: Config = {
         // rather than airy and put a third of the home page's height into the gaps
         // between lines. Leading is relative to size; a ratio tuned at one size does
         // not survive a third being added to it.
-        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.5", letterSpacing: "0.008em" }],
+        "body-lg": ["clamp(1.1875rem, calc(1.6vw / var(--zoom)), 1.5rem)", { lineHeight: "1.5", letterSpacing: "0.008em" }],
         // 17px — Apple's body size, and the reference the tracking values above were
         // measured from. It spent a while at 19px and is back. The tracking was
         // deliberately NOT re-derived when it went up and is not re-derived now that
@@ -200,6 +223,23 @@ const config: Config = {
         // a 14px glyph is 1.14, which is a caption set solid.
         "xs": ["0.875rem", { lineHeight: "1.3333" }],
       },
+      // THE `screen` UTILITIES, REDEFINED AGAINST THE PAGE SCALE. Tailwind ships
+      // h-screen/min-h-screen/max-h-screen as a literal 100vh and w-screen as 100vw,
+      // and vh/vw are the one kind of length `zoom` does not scale (see --zoom in
+      // globals.css). Left at the stock value, `min-h-screen` on the dashboard shell
+      // would guarantee 80% of the window rather than all of it, and the page would
+      // end in a 20% band of bare background on every short route — a full-height
+      // utility that is not full height is worse than none.
+      //
+      // Overriding them here rather than at the two call sites is the point: the
+      // division is a property of what `screen` MEANS under a scaled root, so any
+      // h-screen written later inherits the fix instead of quietly reintroducing the
+      // bug. If the dynamic-viewport steps (h-dvh, h-svh, h-lvh) ever get used, they
+      // need exactly the same treatment for exactly the same reason.
+      height: { screen: "calc(100vh / var(--zoom))" },
+      minHeight: { screen: "calc(100vh / var(--zoom))" },
+      maxHeight: { screen: "calc(100vh / var(--zoom))" },
+      width: { screen: "calc(100vw / var(--zoom))" },
       // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },
       borderRadius: {

@@ -29,7 +29,7 @@
 // Text wears text tokens throughout. The accent appears on the marks and on the
 // figure that names the rank, never on a label.
 
-import { PROJECTS } from "@/content/club";
+import { PROJECTS } from "@/content/showcase";
 
 export default function ProofPanel() {
   const lead = PROJECTS.find((p) => p.published && p.proof);
@@ -98,8 +98,7 @@ export default function ProofPanel() {
           <p className="mt-4 text-body-lg text-ink">
             {pct}% merged.{" "}
             <span className="text-haze">
-              The rest were closed or superseded, which is a normal ratio and the
-              reason we publish it rather than rounding it up.
+              The rest were closed — totally normal, so we don&apos;t round up.
             </span>
           </p>
 
@@ -119,7 +118,7 @@ export default function ProofPanel() {
       </div>
 
       <figcaption className="border-t border-seam px-8 py-4 text-sm text-dust sm:px-12">
-        {lead.what} Counted from the public repository — open the link and check.
+        {lead.what} From the public repo — go check.
       </figcaption>
     </figure>
   );

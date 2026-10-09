@@ -117,7 +117,7 @@ function Slide({
       // The clamp is 60% of the band this section first shipped with
       // (32/76vh/42rem): the panel was taller than the words needed, so the
       // extra was empty blue above and below a centred stack.
-      className="stories-slide w-full shrink-0 lg:min-h-[clamp(19.2rem,45.6vh,25.2rem)]"
+      className="stories-slide w-full shrink-0 lg:min-h-[clamp(19.2rem,calc(45.6vh/var(--zoom)),25.2rem)]"
     >
       {/* `justify-center` centres the words vertically in the slide; the figure's
           own mx-auto centres them across it. Nothing is pinned to the left edge

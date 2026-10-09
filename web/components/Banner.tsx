@@ -18,7 +18,7 @@
 
 import Link from "next/link";
 import Doodle from "@/components/Doodle";
-import { LINKS } from "@/content/club";
+import { LINKS } from "@/content/site";
 
 export default function Banner() {
   return (

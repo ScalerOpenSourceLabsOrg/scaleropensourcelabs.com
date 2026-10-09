@@ -22,7 +22,7 @@ export default function DetailsSection() {
   const router = useRouter();
 
   return (
-    <RequireProfile loading="Loading your details…">
+    <RequireProfile loading="Loading…">
       {({ user, profile, reload }) => (
         <div className="mx-auto max-w-3xl">
           <SectionHead
@@ -49,8 +49,8 @@ export default function DetailsSection() {
             }
           >
             {editing
-              ? "Change anything and save. Your address stays as it is on your college account — it is what your membership hangs on."
-              : "This is everything the club holds about you, and it is visible to you and the organisers only. Nothing here is published on the site."}
+              ? "Your college email is locked — your membership hangs on it."
+              : "Visible to you and the organisers only."}
           </SectionHead>
 
           {editing ? (
@@ -79,7 +79,7 @@ export default function DetailsSection() {
                 onClick={() => router.push("/dashboard")}
                 className="tap mt-8 font-mono text-label uppercase tracking-wider text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:text-ink"
               >
-                Back to your week
+                Back to dashboard
               </button>
             </>
           )}

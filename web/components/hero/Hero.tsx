@@ -22,103 +22,13 @@
 // argument continues.
 
 import Link from "next/link";
-import { PROJECTS, selectionStats } from "@/content/club";
 import Terminal from "@/components/hero/Terminal";
+import HeroGraph from "@/components/hero/HeroGraph";
+import PeelSticker from "@/components/fx/PeelSticker";
 import Icon from "@/components/Icon";
 import Term from "@/components/fx/Term";
 import CelebrateLink from "@/components/fx/CelebrateLink";
 import Glow from "@/components/fx/Glow";
-
-/* The floating chips anchored to the terminal's corners.
- *
- * Positions and colours are the brief's exactly: purple top-right, mint
- * bottom-left, each led by its coloured circle emoji.
- *
- * The FIGURES are not. The brief asks for "🟣 140+ PRs Merged" and
- * "🟢 $12,000+ Earned"; the repo's verified merge count is 46, and there is no
- * earnings figure anywhere in the content — not in PROJECTS, not in SELECTIONS,
- * not in the copy. Inventing one on a recruitment page aimed at sixteen-year-olds
- * is the single most consequential number that could be wrong here, because
- * "students earn money doing this" is the claim most likely to change what
- * somebody does next.
- *
- * So the chips carry what the club can actually show: the API-verified merge
- * count, and the size of the published cohort. Both grow on their own as entries
- * are added. A chip with nothing true to say does not render, which is why each
- * is guarded separately rather than the pair being one block.
- *
- * lg only. They are absolutely positioned over a column that does not exist below
- * lg, and a decorative element that can push a phone into a horizontal scroll is
- * a defect rather than a flourish.
- */
-function FloatingBadges() {
-  const merged = PROJECTS.find((p) => p.published && p.tag)?.tag;
-  const total = selectionStats().total;
-
-  return (
-    <>
-      {/* Both badges STRADDLE AN EDGE of the terminal rather than sitting over
-          its face, and the offsets are picked so they do: a chip is about 25px
-          tall, so -20px puts roughly 5px of it inside the card and the rest
-          outside. That is what reads as a sticker stuck to the corner.
-
-          The first attempt put this second badge at `top-24 -left-10`, which
-          floated it across the middle of the card — directly over the
-          contributor rank and the merged count. A decorative badge covering the
-          real evidence is the worst possible arrangement of these two elements,
-          and it is only obvious once rendered.
-
-          Diagonally opposed rather than side by side on the top edge: two chips
-          on one line read as a toolbar. */}
-      {/* WRAPPER CARRIES POSITION AND VISIBILITY; the chip inside carries only
-          its appearance. That split is not tidiness — putting `hidden
-          lg:inline-block` on the chip itself DID NOT WORK, and failed silently.
-
-          `.chip` declares `display: inline-block`, and globals.css is emitted
-          after Tailwind's utilities layer, so at equal specificity the class
-          beats `hidden`. Both badges therefore rendered at every width,
-          absolutely positioned against a column that only exists at lg — on a
-          390px phone the violet one sat at negative x, half off the left edge of
-          the screen.
-
-          Nothing reported it. `body` sets `overflow-x: hidden`, so the escaping
-          element was clipped rather than made scrollable, and the QA sweep's
-          overflow check looks for a document wider than the viewport — which it
-          never was. It took looking at a phone screenshot. The wrapper is a
-          plain span with no competing display rule, so `hidden` applies. */}
-      {merged && (
-        <span
-          aria-hidden
-          className="absolute -top-5 right-4 z-10 hidden animate-float lg:block"
-        >
-          <span className="chip chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
-            🟣 {merged.label}
-          </span>
-        </span>
-      )}
-      {total > 0 && (
-        <span
-          aria-hidden
-          // 1.5s of delay on a 3s cycle puts this chip exactly out of phase with
-          // the one above. In phase they rise and fall together and read as one
-          // rigid sheet sliding about; opposed, each looks independently buoyant.
-          className="absolute -bottom-5 left-6 z-10 hidden animate-float lg:block"
-          style={{ animationDelay: "1.5s" }}
-        >
-          {/* A status pill rather than a chip, so it wears the same black keyline
-              and hard shadow as the buttons.
-
-              The brief's example label is "⚡ Project Deployed!". This says what
-              the club can actually show instead — the count comes from
-              selectionStats(), so it cannot drift from the list below it, and
-              "deployed" would be claiming a thing no entry in the content file
-              records. Same shape, same lightning bolt, true. */}
-          <span className="status-pill">⚡ {total} selected</span>
-        </span>
-      )}
-    </>
-  );
-}
 
 export default function Hero() {
   return (
@@ -133,7 +43,7 @@ export default function Hero() {
       // Deliberately the utility rather than `.page-top` itself: that class is declared
       // after @tailwind utilities, so it would beat `lg:pt-40` at equal specificity and
       // silently flatten the large-screen air. See the note over .page-top.
-      className="section relative pb-10 pt-16 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
+      className="section relative pb-10 pt-16 sm:pb-14 sm:pt-28 lg:pb-20 lg:pt-36"
       aria-label="Scaler Open Source Club"
     >
       {/* The ambient lighting. Two orbs rather than one, placed off the diagonal
@@ -217,6 +127,8 @@ export default function Hero() {
               with the O's very nearly touching. */}
           <h1 className="mt-4 font-display text-display-xl font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
             Open <span className="text-accent">Source</span>
+            {/* A terminal cursor, blinking at the end of the title. */}
+            <span aria-hidden className="caret" />
           </h1>
 
           {/* Kept a shade tighter than Duo's 1.22: this paragraph carries a lozenge,
@@ -224,7 +136,7 @@ export default function Hero() {
               pill does not prise one line of a paragraph open wider than its
               neighbours. Too much leading here and the pill stops looking set into
               the sentence. */}
-          <p className="mt-4 text-display-lg font-bold leading-[1.18] tracking-tight text-ink text-balance">
+          <p className="mt-4 font-display text-display-lg font-bold leading-[1.18] tracking-tight text-ink text-balance">
             We put student names in the{" "}
             {/* A tinted pill rather than the yellow marker stroke. The phrase is
                 the claim, so it gets lifted out of the sentence entirely — and
@@ -252,9 +164,8 @@ export default function Hero() {
               invites a hover that answers "Yes, that Google" — a joke that costs the
               reader a decision and tells them nothing they did not already know. */}
           <p className="mt-4 text-body-lg text-haze">
-            Members contribute to the projects the world already runs on, and get paid by
-            Google, the Linux Foundation and others to do it. Every claim on this page is
-            a link you can open.
+            Members ship code to projects the world runs on — and get paid by Google, the
+            Linux Foundation and more to do it. Every claim here is a link.
           </p>
 
           {/* gap-3 on a phone, gap-4 above it: at 390px these two wrap to one
@@ -278,18 +189,34 @@ export default function Hero() {
             <CelebrateLink href="/join" className="btn btn-secondary">
               Join the club
             </CelebrateLink>
+            {/* Laptop-lid stickers. They peel off: drag them. lg+ only, where the
+                right of this row is empty. See PeelSticker.tsx. */}
+            <PeelSticker tone="green" tilt={-7} className="right-6 top-0 hidden lg:inline-flex">
+              LGTM 👍
+            </PeelSticker>
 
           </div>
         </div>
 
-        {/* The right 40%. `relative` so the floating badges anchor to this
+        {/* The right 40%. `relative` so the floating stickers anchor to this
             column rather than to the whole hero — anchored to the header they
             would drift as the left column's height changed. */}
         <div className="relative">
-          <FloatingBadges />
+          <PeelSticker tone="yellow" tilt={-9} className="-left-10 bottom-14 z-20 hidden lg:inline-flex">
+            🚢 ship it
+          </PeelSticker>
+          {/* GitHub's "Merged" state badge, slapped on the terminal's corner like
+              a sticker — the outcome of the commands inside it. */}
+          <span aria-hidden className="pr-badge absolute -right-3 -top-4 z-10">
+            <Icon name="git-merge" size="1em" strokeWidth={2.5} />
+            Merged
+          </span>
           <Terminal />
         </div>
       </div>
+      {/* The contribution calendar, full width under both columns — the page's
+          one big picture, and it is a picture of the work. See HeroGraph.tsx. */}
+      <HeroGraph />
     </header>
   );
 }

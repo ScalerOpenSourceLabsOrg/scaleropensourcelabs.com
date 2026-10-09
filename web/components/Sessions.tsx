@@ -17,6 +17,7 @@
 // in India a time several hours off the one they just chose.
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import AudiencePicker from "@/components/AudiencePicker";
 import Icon from "@/components/Icon";
 import { DEFAULT_AUDIENCE, audienceOf, type Audience } from "@/lib/audience";
@@ -55,7 +56,17 @@ function Row({
         <span className="block font-mono text-xs text-dust">{when.time}</span>
       </td>
       <td className="py-3 pr-4">
-        <span className="block text-sm font-medium text-ink">{s.title}</span>
+        <span className="block text-sm font-medium text-ink">
+          {s.title}
+          {/* MARKED IN THE LIST, because "is this one a Build Day" is otherwise only
+              answerable by opening the editor — and it is the field that decides whether a
+              roll can be taken at it at all. */}
+          {s.kind === "build-day" && (
+            <span className="ml-2 font-mono text-label uppercase tracking-wider text-accent">
+              build day
+            </span>
+          )}
+        </span>
         {s.location && (
           <span className="block text-sm text-haze">{s.location}</span>
         )}
@@ -65,6 +76,18 @@ function Row({
       <td className="py-3 pr-4 font-mono text-sm text-haze">{s.speaker || "TBA"}</td>
       <td className="py-3">
         <div className="flex flex-wrap gap-3">
+          {/* ONLY ON THE ONES THAT HAVE ALREADY RUN. The roll-call screen offers no session
+              that has not started — nobody can be present at a thing that has not happened —
+              so a link here on a future Build Day would land on a picker that quietly chose
+              a different session. */}
+          {s.kind === "build-day" && past && (
+            <Link
+              href={`/admin/build-days?session=${s.id}`}
+              className="tap font-mono text-label uppercase tracking-wider text-accent underline transition-colors hover:text-ink"
+            >
+              Take the roll
+            </Link>
+          )}
           <button
             type="button"
             onClick={onEdit}
@@ -95,6 +118,7 @@ export default function Sessions() {
   const [location, setLocation] = useState("");
   const [when, setWhen] = useState("");
   const [audience, setAudience] = useState<Audience>(DEFAULT_AUDIENCE);
+  const [buildDay, setBuildDay] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
@@ -104,7 +128,7 @@ export default function Sessions() {
       setRows(await readSessions());
     } catch (e) {
       console.error("[osc] could not read sessions", e);
-      setError("Could not load the schedule. The rules may not be deployed.");
+      setError("Couldn't load the schedule. Are the rules deployed?");
       setRows([]);
     }
   }, []);
@@ -124,6 +148,7 @@ export default function Sessions() {
     setLocation("");
     setWhen("");
     setAudience(DEFAULT_AUDIENCE);
+    setBuildDay(false);
     setError("");
   }
 
@@ -138,6 +163,7 @@ export default function Sessions() {
     // this field existed opens in the editor showing the audience it actually has
     // rather than an empty select that would save as something else.
     setAudience(audienceOf(s.audience));
+    setBuildDay(s.kind === "build-day");
     setNote("");
     setError("");
   }
@@ -153,7 +179,7 @@ export default function Sessions() {
     // Checked before the write so the reason is a sentence rather than a permission
     // error. The rules refuse a non-timestamp too, but they cannot explain themselves.
     if (!when || Number.isNaN(at.getTime())) {
-      setError("A session needs a date and a time — that is the whole point of one.");
+      setError("Add a date and a time.");
       return;
     }
     setBusy(true);
@@ -161,24 +187,24 @@ export default function Sessions() {
       await saveSession(
         editing?.id ?? null,
         user!.email!,
-        { title, speaker, location, starts_at: at, audience },
+        { title, speaker, location, starts_at: at, audience, buildDay },
         editing,
       );
       setNote(
         editing
           ? "Updated."
           : audience === "members"
-            ? "Scheduled. Club members see it on their dashboard now."
+            ? "Scheduled. Members see it now."
             : audience === "students"
-              ? "Scheduled. Students who are not members see it; members will not."
-              : "Scheduled. Everyone who signs in sees it on their dashboard now.",
+              ? "Scheduled. Non-members only."
+              : "Scheduled. Everyone sees it now.",
       );
       reset();
       await load();
     } catch (e) {
       console.error("[osc] could not save the session", e);
       setError(
-        "Firestore refused that. Either the rules are not deployed, or your address is not in the admins collection.",
+        "Firestore said no. Check the rules are deployed and you're an admin.",
       );
     } finally {
       setBusy(false);
@@ -284,6 +310,33 @@ export default function Sessions() {
               controlClassName={ctl}
               className="sm:col-span-2"
             />
+
+            {/* A CHECKBOX RATHER THAN A "TYPE" SELECT, because there are two kinds of
+                session and one of them is the ordinary one. A select would make an
+                organiser choose between "Session" and "Build Day" every time they schedule
+                a talk, to say the thing the empty state already says.
+
+                WHAT IT ACTUALLY TURNS ON is the roll — see /admin/build-days. It is worth
+                saying here, because "Build Day" is a word the club uses for a kind of
+                event, and a reader could reasonably think this only changes a label. */}
+            <div className="sm:col-span-2">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={buildDay}
+                  onChange={(e) => setBuildDay(e.target.checked)}
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-ink">
+                    This is a Build Day
+                  </span>
+                  <span className="block text-sm text-haze">
+                    Adds a roll call for who came and which track.
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
 
           {error && (
@@ -319,8 +372,7 @@ export default function Sessions() {
 
         {rows !== null && next.length === 0 && (
           <p className="text-sm text-haze">
-            Nothing on the calendar. Members see “no sessions scheduled yet” until there
-            is.
+            Nothing scheduled yet.
           </p>
         )}
 

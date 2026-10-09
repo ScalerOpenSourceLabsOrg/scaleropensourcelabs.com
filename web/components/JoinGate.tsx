@@ -70,7 +70,6 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { DOMAIN } from "@/lib/profile";
 import { LINKS } from "@/content/site";
@@ -240,9 +239,8 @@ function Gate() {
       <div className="card rounded-panel bg-raise p-8 sm:p-10">
         <p className="text-display-md font-semibold">Sign-in is not set up here.</p>
         <p className="measure mt-4 text-body text-haze">
-          This deployment has no Firebase configuration, so registration is switched off.
-          If you are running the site locally, see <code>web/.env.example</code>. If you
-          are seeing this on the live site, that is a bug — please tell us.
+          Running locally? See <code>web/.env.example</code>. Seeing this live? That&apos;s
+          a bug — tell us.
         </p>
         <a href={`mailto:${LINKS.email}`} className="btn btn-secondary mt-6">
           Email the organisers
@@ -336,9 +334,8 @@ function Gate() {
           {wrongAccount && (
             <p className="mt-2 text-sm leading-relaxed text-dust">
               You signed in as{" "}
-              <span className="font-mono text-haze">{wrongAccount}</span>. Press the
-              button again and pick your college account from the list — Google will
-              ask which one to use.
+              <span className="font-mono text-haze">{wrongAccount}</span>. Try again and
+              pick your college account.
             </p>
           )}
         </div>
@@ -380,16 +377,11 @@ function Gate() {
             <h3 className="font-semibold text-ink">Who can sign in</h3>
             <p className="mt-2 text-sm leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address.
-              No other address can register, and that is the whole check — no fee, no
-              interview, no prior experience.
+              That&apos;s the only check — no fee, no interview, no experience needed.
             </p>
           </div>
         </div>
       </div>
-
-      {/* Renders nothing unless an emulator is configured, and is not in the bundle at all
-          when one is not. See components/dev/DevLoginSlot.tsx. */}
-      <DevLoginSlot />
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK, and this reverses a judgement I made a
           turn earlier. I added an organisers' email here on the reasoning that a closed

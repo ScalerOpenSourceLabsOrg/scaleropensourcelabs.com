@@ -97,7 +97,7 @@ export default function AudienceBackfill() {
     } catch (e) {
       console.error("[osc] backfill failed", e);
       setError(
-        "Firestore refused part of that. Nothing is half-written — each document is its own write, so run it again and it will pick up whatever is left.",
+        "Some didn't save. Run it again — it picks up where it left off.",
       );
     } finally {
       setBusy(false);
@@ -110,8 +110,7 @@ export default function AudienceBackfill() {
     // Confirm the run that just happened, then go quiet for good.
     return done > 0 ? (
       <p className="text-sm text-haze">
-        Stamped {done} older {done === 1 ? "item" : "items"} as visible to everyone. Nothing
-        left to migrate.
+        Marked {done} older {done === 1 ? "item" : "items"} as everyone. All done.
       </p>
     ) : null;
   }
@@ -126,9 +125,8 @@ export default function AudienceBackfill() {
         {Object.entries(stale)
           .map(([name, ids]) => `${ids.length} ${COLLECTIONS.find((c) => c[0] === name)?.[1] ?? name}`)
           .join(", ")}{" "}
-        were posted before notices had an audience. Members cannot see them until they are
-        marked. This sets them to <strong className="text-ink">everyone</strong>, which is
-        who they reached when they were written.
+        predate audiences, so nobody sees them. This sets them to{" "}
+        <strong className="text-ink">everyone</strong>, like before.
       </p>
       {error && (
         <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
